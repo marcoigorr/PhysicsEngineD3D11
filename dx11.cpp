@@ -48,8 +48,8 @@ void Direct3D11::InitD3D(HWND hWnd)
 
     viewport.TopLeftX = 0;
     viewport.TopLeftY = 0;
-    viewport.Width = 1280;
-    viewport.Height = 720;
+    viewport.Width = SCREEN_WIDTH;
+    viewport.Height = SCREEN_HEIGHT;
 
     _devcon->RSSetViewports(1, &viewport);
 }

@@ -3,10 +3,10 @@
 class wnd 
 {
 public:
-	HWND hWnd; // Handle for the window
+	HWND hWnd; // handle for the window
 
-	int SCREEN_WIDTH = 1280;
-	int SCREEN_HEIGHT = 720;
+	/*int SCREEN_WIDTH = 1280;
+	int SCREEN_HEIGHT = 720;*/
 
 	void CreateWnd(HINSTANCE hInstance);
 	void GetDesktopResolution(int& horizontal, int& vertical);
