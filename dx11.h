@@ -10,7 +10,7 @@ public:
 
 	void InitD3D(HWND hWnd);     // sets up and initializes Direct3D
 	void CleanD3D(void);         // closes Direct3D and releases memory
-	void RenderFrame(void);
+	void RenderFrame(void);		 // renders a single frame
 };
 
 extern Direct3D11* d3d11;

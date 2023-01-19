@@ -66,7 +66,7 @@ void Direct3D11::CleanD3D(void)
 void Direct3D11::RenderFrame(void)
 {
     // Clear the back buffer to a color
-    _devcon->ClearRenderTargetView(_backbuffer, D3DXCOLOR(.0f, .2f, .4f, 1.f));
+    _devcon->ClearRenderTargetView(_backbuffer, D3DXCOLOR(0.0f, 0.2f, 0.4f, 1.0f));
 
     // render here
 

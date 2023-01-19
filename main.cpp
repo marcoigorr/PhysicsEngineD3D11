@@ -46,7 +46,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
             if (msg.message == WM_QUIT)
                 break;
-        }        
+        }
+
+        d3d11->RenderFrame();
     }
 
     // Clean up DirectXand COM
