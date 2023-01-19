@@ -26,18 +26,52 @@ void Direct3D11::InitD3D(HWND hWnd)
         NULL,
         D3D11_SDK_VERSION,
         &scd,
-        &swapchain,
-        &dev,
+        &_swapchain,
+        &_dev,
         NULL,
-        &devcon);
+        &_devcon);
+
+    // Get address of back buffer
+    ID3D11Texture2D* pBackBuffer;
+    _swapchain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&pBackBuffer);
+
+    // Use the back buffer address to create the render target
+    _dev->CreateRenderTargetView(pBackBuffer, NULL, &_backbuffer);
+    pBackBuffer->Release();
+
+    // Set render target as the back buffer
+    _devcon->OMSetRenderTargets(1, &_backbuffer, NULL);
+
+    // Set viewport
+    D3D11_VIEWPORT viewport;
+    ZeroMemory(&viewport, sizeof(D3D11_VIEWPORT));
+
+    viewport.TopLeftX = 0;
+    viewport.TopLeftY = 0;
+    viewport.Width = 1280;
+    viewport.Height = 720;
+
+    _devcon->RSSetViewports(1, &viewport);
 }
 
 void Direct3D11::CleanD3D(void)
 {
     // close and release all existing COM objects
-    swapchain->Release();
-    dev->Release();
-    devcon->Release();
+    _swapchain->Release();
+    _backbuffer->Release();
+    _dev->Release();
+    _devcon->Release();
+}
+
+void Direct3D11::RenderFrame(void)
+{
+    // Clear the back buffer to a color
+    _devcon->ClearRenderTargetView(_backbuffer, D3DXCOLOR(.0f, .2f, .4f, 1.f));
+
+    // render here
+
+    // Switch back buffer and front buffer
+    _swapchain->Present(0, 0);
 }
 
 Direct3D11* d3d11 = new Direct3D11();
