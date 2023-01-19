@@ -36,7 +36,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     MSG msg;
 
     // Main loop
-    while (!(GetAsyncKeyState(VK_HOME)))
+    while (!(GetAsyncKeyState(VK_ESCAPE)))
     {
         // Check to see if any messages are waiting in the queue
         if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
