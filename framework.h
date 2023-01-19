@@ -16,5 +16,5 @@
 #pragma comment (lib, "d3dx10.lib")
 
 // Screen Resolution
-#define SCREEN_WIDTH 1280
-#define SCREEN_HEIGHT 1024
+#define SCREEN_WIDTH 1600
+#define SCREEN_HEIGHT 1200

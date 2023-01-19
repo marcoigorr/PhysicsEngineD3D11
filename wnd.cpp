@@ -16,7 +16,7 @@ void wnd::CreateWnd(HINSTANCE hInstance)
     wc.lpfnWndProc = WindowProc;
     wc.hInstance = hInstance;
     wc.hCursor = LoadCursor(NULL, IDC_ARROW);
-    wc.hbrBackground = (HBRUSH)COLOR_WINDOW;
+    // wc.hbrBackground = (HBRUSH)COLOR_WINDOW;
     wc.lpszClassName = L"WindowClass";
 
     // Register window class

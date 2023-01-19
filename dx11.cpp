@@ -16,6 +16,9 @@ void Direct3D11::InitD3D(HWND hWnd)
     scd.OutputWindow = hWnd;                                // the window to be used
     scd.SampleDesc.Count = 8;                               // MSAA (Anti-Alias)
     scd.Windowed = TRUE;                                    // windowed/full-screen mode
+    scd.BufferDesc.Width = SCREEN_WIDTH;
+    scd.BufferDesc.Height = SCREEN_HEIGHT;
+    scd.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;     // allow full-screen switching
 
     // Create device, device context and swap chain using the information in the scd struct
     D3D11CreateDeviceAndSwapChain(NULL,
@@ -56,6 +59,8 @@ void Direct3D11::InitD3D(HWND hWnd)
 
 void Direct3D11::CleanD3D(void)
 {
+    _swapchain->SetFullscreenState(FALSE, NULL);    // switch to windowed mode
+
     // close and release all existing COM objects
     _swapchain->Release();
     _backbuffer->Release();
