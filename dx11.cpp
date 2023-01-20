@@ -95,6 +95,48 @@ void Direct3D11::InitPipeline(void)
     // Activate shaders
     _devcon->VSSetShader(_pVS, 0, 0);
     _devcon->PSSetShader(_pPS, 0, 0);
+
+    // Creating input layout to let gpu organize data properly
+    D3D11_INPUT_ELEMENT_DESC ied[] =
+    {
+        {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0}, // offset 0x0
+        {"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0}, // offset 0xC
+    };
+
+    _dev->CreateInputLayout(ied, 2, VS->GetBufferPointer(), VS->GetBufferSize(), &_pLayout);
+    _devcon->IASetInputLayout(_pLayout);
+}
+
+struct VERTEX {
+    FLOAT x, y, z;
+    D3DXCOLOR Color;
+};
+
+void Direct3D11::InitGraphics(void)
+{
+    // create a triangle using the VERTEX struct
+    VERTEX OurVertices[] =
+    {
+        {0.0f, 0.5f, 0.0f, D3DXCOLOR(1.0f, 0.0f, 0.0f, 1.0f)},
+        {0.45f, -0.5f, 0.0f, D3DXCOLOR(0.0f, 1.0f, 0.0f, 1.0f)},
+        {-0.45f, -0.5f, 0.0f, D3DXCOLOR(0.0f, 0.0f, 1.0f, 1.0f)}
+    };
+
+    D3D11_BUFFER_DESC bd;
+    ZeroMemory(&bd, sizeof(bd));
+
+    bd.Usage = D3D11_USAGE_DYNAMIC;                // write access access by CPU and GPU
+    bd.ByteWidth = sizeof(VERTEX) * 3;             // size is the VERTEX struct * 3
+    bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;       // use as a vertex buffer
+    bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;    // allow CPU to write in buffer
+
+    _dev->CreateBuffer(&bd, NULL, &_pVBuffer);     // create the buffer
+
+    // Copy the vertices into the buffer
+    D3D11_MAPPED_SUBRESOURCE ms;
+    _devcon->Map(_pVBuffer, NULL, D3D11_MAP_WRITE_DISCARD, NULL, &ms);    // map the buffer
+    memcpy(ms.pData, OurVertices, sizeof(OurVertices));                 // copy the data
+    _devcon->Unmap(_pVBuffer, NULL);        // unmap the buffer, allow the gpu to access the buffer
 }
 
 Direct3D11* d3d11 = new Direct3D11();
