@@ -1,6 +1,11 @@
 #include "pch.h"
 #include "dx11.h"
 
+struct VERTEX {
+    FLOAT x, y, z;
+    D3DXCOLOR Color;
+};
+
 void Direct3D11::InitD3D(HWND hWnd)
 {
     // Struct hold information about swap chain
@@ -55,6 +60,9 @@ void Direct3D11::InitD3D(HWND hWnd)
     viewport.Height = SCREEN_HEIGHT;
 
     _devcon->RSSetViewports(1, &viewport);
+
+    InitPipeline();
+    InitGraphics();
 }
 
 void Direct3D11::CleanD3D(void)
@@ -62,8 +70,10 @@ void Direct3D11::CleanD3D(void)
     _swapchain->SetFullscreenState(FALSE, NULL);    // switch to windowed mode
 
     // close and release all existing COM objects
+    _pLayout->Release();
     _pVS->Release();
     _pPS->Release();
+    _pVBuffer ->Release();
     _swapchain->Release();
     _backbuffer->Release();
     _dev->Release();
@@ -75,7 +85,18 @@ void Direct3D11::RenderFrame(void)
     // Clear the back buffer to a color
     _devcon->ClearRenderTargetView(_backbuffer, D3DXCOLOR(0.0f, 0.2f, 0.4f, 1.0f));
 
-    // render here
+    {
+        // Tell the GPU which vertices to read from when rendering
+        UINT stride = sizeof(VERTEX);
+        UINT offset = 0;
+        _devcon->IASetVertexBuffers(0, 1, &_pVBuffer, &stride, &offset);
+
+        // Tell Direct3D which type of primitive to use
+        _devcon->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+        // Draw the vertex buffer to the back buffer
+        _devcon->Draw(3, 0);    // draw 3 verticies, starting from vertex 0
+    }
 
     // Switch back buffer and front buffer
     _swapchain->Present(0, 0);
@@ -106,11 +127,6 @@ void Direct3D11::InitPipeline(void)
     _dev->CreateInputLayout(ied, 2, VS->GetBufferPointer(), VS->GetBufferSize(), &_pLayout);
     _devcon->IASetInputLayout(_pLayout);
 }
-
-struct VERTEX {
-    FLOAT x, y, z;
-    D3DXCOLOR Color;
-};
 
 void Direct3D11::InitGraphics(void)
 {

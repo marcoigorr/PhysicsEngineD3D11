@@ -159,6 +159,9 @@
     <Image Include="Physics Engine D3D11.ico" />
     <Image Include="small.ico" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="shaders.shader" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
