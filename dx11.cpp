@@ -62,6 +62,8 @@ void Direct3D11::CleanD3D(void)
     _swapchain->SetFullscreenState(FALSE, NULL);    // switch to windowed mode
 
     // close and release all existing COM objects
+    _pVS->Release();
+    _pPS->Release();
     _swapchain->Release();
     _backbuffer->Release();
     _dev->Release();
@@ -77,6 +79,22 @@ void Direct3D11::RenderFrame(void)
 
     // Switch back buffer and front buffer
     _swapchain->Present(0, 0);
+}
+
+void Direct3D11::InitPipeline(void)
+{
+    // Load and compile the two shaders
+    ID3D10Blob* VS, * PS;  // buffer with compiled code of the shader (COM obj)
+    D3DX11CompileFromFile(L"shaders.shader", 0, 0, "VShader", "vs_4_0", 0, 0, 0, &VS, 0, 0);
+    D3DX11CompileFromFile(L"shaders.shader", 0, 0, "PShader", "ps_4_0", 0, 0, 0, &PS, 0, 0);
+
+    // Encapsulate shaders into shader objects
+    _dev->CreateVertexShader(VS->GetBufferPointer(), VS->GetBufferSize(), NULL, &_pVS);
+    _dev->CreatePixelShader(PS->GetBufferPointer(), PS->GetBufferSize(), NULL, &_pPS);
+
+    // Activate shaders
+    _devcon->VSSetShader(_pVS, 0, 0);
+    _devcon->PSSetShader(_pPS, 0, 0);
 }
 
 Direct3D11* d3d11 = new Direct3D11();
