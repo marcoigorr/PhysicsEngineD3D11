@@ -30,7 +30,7 @@ void wnd::CreateWnd(HINSTANCE hInstance)
     hWnd = CreateWindowEx(NULL,
         L"WindowClass",
         L"PhysicsEngine",
-        WS_OVERLAPPEDWINDOW,    // fullscreen values
+        WS_OVERLAPPEDWINDOW & ~WS_THICKFRAME & ~WS_MAXIMIZEBOX,    // window flags
         0,  // the starting x and y positions should be 0
         0,
         wr.right - wr.left,  // width of window
