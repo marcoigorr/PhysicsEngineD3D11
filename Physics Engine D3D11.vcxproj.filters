@@ -13,11 +13,20 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="wnd">
-      <UniqueIdentifier>{bec25f62-da02-4c81-8dd1-fb2d23755408}</UniqueIdentifier>
+    <Filter Include="ErrorLogger">
+      <UniqueIdentifier>{e93cc216-dc82-4697-bae4-c1a73af83c75}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Direct3D11">
+    <Filter Include="StringConverter">
+      <UniqueIdentifier>{99ca9d59-27c5-4460-a265-4ec9d1207bf2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Graphics">
+      <UniqueIdentifier>{99ad7dc4-ea59-43f3-9167-1258053f3eb7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Graphics\Direct3D11">
       <UniqueIdentifier>{bfb9c40a-882f-4121-9257-4af755e4b39e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Window">
+      <UniqueIdentifier>{bec25f62-da02-4c81-8dd1-fb2d23755408}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -28,10 +37,22 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="wnd.h">
-      <Filter>wnd</Filter>
+      <Filter>Window</Filter>
     </ClInclude>
     <ClInclude Include="dx11.h">
-      <Filter>Direct3D11</Filter>
+      <Filter>Graphics\Direct3D11</Filter>
+    </ClInclude>
+    <ClInclude Include="ErrorLogger.h">
+      <Filter>ErrorLogger</Filter>
+    </ClInclude>
+    <ClInclude Include="StringConverter.h">
+      <Filter>StringConverter</Filter>
+    </ClInclude>
+    <ClInclude Include="StringConverter.cpp">
+      <Filter>StringConverter</Filter>
+    </ClInclude>
+    <ClInclude Include="Vertexh.h">
+      <Filter>Graphics</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -42,21 +63,21 @@
       <Filter>Header Files</Filter>
     </ClCompile>
     <ClCompile Include="wnd.cpp">
-      <Filter>wnd</Filter>
+      <Filter>Window</Filter>
     </ClCompile>
     <ClCompile Include="dx11.cpp">
-      <Filter>Direct3D11</Filter>
+      <Filter>Graphics\Direct3D11</Filter>
+    </ClCompile>
+    <ClCompile Include="ErrorLogger.cpp">
+      <Filter>ErrorLogger</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="small.ico">
+    <FxCompile Include="vertexshader.hlsl">
       <Filter>Resource Files</Filter>
-    </Image>
-    <Image Include="Physics Engine D3D11.ico">
+    </FxCompile>
+    <FxCompile Include="pixelshader.hlsl">
       <Filter>Resource Files</Filter>
-    </Image>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="shaders.shader" />
+    </FxCompile>
   </ItemGroup>
 </Project>

@@ -1,20 +1,25 @@
 #pragma once
 
-class wnd 
+class wnd
 {
 public:
-	HWND hWnd; // handle for the window
+	wnd();
+	~wnd();
 
-	/*int SCREEN_WIDTH = 1280;
-	int SCREEN_HEIGHT = 720;*/
-
-	void CreateWnd(HINSTANCE hInstance);
+	bool CreateWnd(HINSTANCE hInstance, std::string sTitle, std::string sClass, int width, int height);
+	bool ProcessMessages();
 	void GetDesktopResolution(int& horizontal, int& vertical);
 
-	wnd()
-	{
-		// GetDesktopResolution(DESKTOP_SCREEN_WIDTH, DESKTOP_SCREEN_HEIGHT);
-	}
+	HWND _hWnd = NULL; // handle for the window
+	HINSTANCE _hInstance = NULL; // handle to application instance
+	std::string _sWindowTitle = "";
+	std::wstring _wWindowTitle = L"";
+	std::string _sWindowClass = "";
+	std::wstring _wWindowClass = L"";
+	int _width = 0;
+	int _height = 0;
+	int _NATIVE_WIDTH = 0;
+	int _NATIVE_HEIGHT = 0;
 };
 
 extern wnd* window;

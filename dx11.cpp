@@ -1,10 +1,7 @@
 #include "pch.h"
 #include "dx11.h"
 
-struct VERTEX {
-    FLOAT x, y, z;
-    D3DXCOLOR Color;
-};
+#include "Vertexh.h"
 
 void Direct3D11::InitD3D(HWND hWnd)
 {
@@ -87,7 +84,7 @@ void Direct3D11::RenderFrame(void)
 
     {
         // Tell the GPU which vertices to read from when rendering
-        UINT stride = sizeof(VERTEX);
+        UINT stride = sizeof(Vertex);
         UINT offset = 0;
         _devcon->IASetVertexBuffers(0, 1, &_pVBuffer, &stride, &offset);
 
@@ -106,8 +103,8 @@ void Direct3D11::InitPipeline(void)
 {
     // Load and compile the two shaders
     ID3D10Blob* VS, * PS;  // buffer with compiled code of the shader (COM obj)
-    D3DX11CompileFromFile(L"shaders.shader", 0, 0, "VShader", "vs_4_0", 0, 0, 0, &VS, 0, 0);
-    D3DX11CompileFromFile(L"shaders.shader", 0, 0, "PShader", "ps_4_0", 0, 0, 0, &PS, 0, 0);
+    D3DX11CompileFromFile(L"vertexshader.hlsl", 0, 0, "VShader", "vs_5_0", 0, 0, 0, &VS, 0, 0);
+    D3DX11CompileFromFile(L"pixelshader.hlsl", 0, 0, "PShader", "ps_5_0", 0, 0, 0, &PS, 0, 0);
 
     // Encapsulate shaders into shader objects
     _dev->CreateVertexShader(VS->GetBufferPointer(), VS->GetBufferSize(), NULL, &_pVS);
@@ -120,7 +117,7 @@ void Direct3D11::InitPipeline(void)
     // Creating input layout to let gpu organize data properly
     D3D11_INPUT_ELEMENT_DESC ied[] =
     {
-        {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0}, // offset 0x0
+        {"POSITION", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0}, // offset 0x0
         {"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0}, // offset 0xC
     };
 
@@ -131,18 +128,18 @@ void Direct3D11::InitPipeline(void)
 void Direct3D11::InitGraphics(void)
 {
     // create a triangle using the VERTEX struct
-    VERTEX Triangle[] =
+    Vertex Triangle[] =
     {
-        {0.0f, 0.5f, 0.0f, D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f)},
-        {0.45f, -0.5f, 0.0f, D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f)},
-        {-0.45f, -0.5f, 0.0f, D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f)}
+        {0.0f, 0.0f},
+        {0.0f, 0.0f},
+        {0.0f, 0.0f}
     };
 
     D3D11_BUFFER_DESC bd;
     ZeroMemory(&bd, sizeof(bd));
 
     bd.Usage = D3D11_USAGE_DYNAMIC;                         // write access access by CPU and GPU
-    bd.ByteWidth = sizeof(VERTEX) * ARRAYSIZE(Triangle);    // size is the VERTEX struct * 3
+    bd.ByteWidth = sizeof(Vertex) * ARRAYSIZE(Triangle);    // size is the VERTEX struct * 3
     bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;                // use as a vertex buffer
     bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;             // allow CPU to write in buffer
 

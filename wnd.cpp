@@ -1,13 +1,34 @@
 #include "pch.h"
 #include "wnd.h"
 
-// Forward declaration of WndProc in main.cpp
-extern LRESULT CALLBACK WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
-void wnd::CreateWnd(HINSTANCE hInstance)
-{
-    WNDCLASSEX wc;
+#include "StringConverter.h"
+#include "ErrorLogger.h"
 
-    // Clearing window class for use
+LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+    switch (message)
+    {
+    case WM_NCCREATE:
+    {
+        OutputDebugStringA("The window was created!");
+        return DefWindowProc(hWnd, message, wParam, lParam);
+    }
+    default:
+        return DefWindowProc(hWnd, message, wParam, lParam);
+    }
+}
+
+bool wnd::CreateWnd(HINSTANCE hInstance, std::string title, std::string wclass, int width, int height)
+{
+    _hInstance = hInstance;
+    _width = width;
+    _height = height;
+    _sWindowTitle = title;
+    _wWindowTitle = StringConverter::StringToWide(title);
+    _sWindowClass = wclass;
+    _wWindowClass = StringConverter::StringToWide(wclass);
+
+    WNDCLASSEX wc;
     ZeroMemory(&wc, sizeof(WNDCLASSEX));
 
     // Filling needed information
@@ -17,20 +38,20 @@ void wnd::CreateWnd(HINSTANCE hInstance)
     wc.hInstance = hInstance;
     wc.hCursor = LoadCursor(NULL, IDC_ARROW);
     // wc.hbrBackground = (HBRUSH)COLOR_WINDOW;
-    wc.lpszClassName = L"WindowClass";
+    wc.lpszClassName = _wWindowClass.c_str();
 
     // Register window class
     RegisterClassEx(&wc);
       
     // Using AdjustWindowRect to set an accurate size of the drawing area
-    RECT wr = { 0,0,SCREEN_WIDTH, SCREEN_HEIGHT };
+    RECT wr = { 0, 0, width, height };
     AdjustWindowRect(&wr, WS_OVERLAPPED, FALSE);
 
     // Create the window and use the result as the handle
-    hWnd = CreateWindowEx(NULL,
-        L"WindowClass",
-        L"PhysicsEngine",
-        WS_OVERLAPPEDWINDOW & ~WS_THICKFRAME & ~WS_MAXIMIZEBOX,    // window flags
+    _hWnd = CreateWindowEx(NULL,
+        _wWindowClass.c_str(),
+        _wWindowTitle.c_str(),
+        WS_OVERLAPPEDWINDOW & ~WS_THICKFRAME,    // window flags
         0,  // the starting x and y positions should be 0
         0,
         wr.right - wr.left,  // width of window
@@ -40,8 +61,39 @@ void wnd::CreateWnd(HINSTANCE hInstance)
         hInstance,
         NULL);
 
-    // Set the opacity and transparency color key
-    // SetLayeredWindowAttributes(window->hWnd, RGB(0, 0, 0), 0, LWA_COLORKEY);
+    if (_hWnd == NULL)
+    {
+        ErrorLogger::Log(GetLastError(), "CreateWindowEx Failed for window " + _sWindowTitle);
+        return false;
+    }
+    
+    return true;
+}
+
+bool wnd::ProcessMessages()
+{
+    // Handle windows messages
+    MSG msg;
+    ZeroMemory(&msg, sizeof(MSG));
+
+    while (PeekMessage(&msg, _hWnd, 0, 0, PM_REMOVE))
+    {
+        TranslateMessage(&msg);
+        DispatchMessage(&msg);
+    }
+
+    // Check if window was closed
+    if (msg.message == WM_NULL)
+    {
+        if (!IsWindow(_hWnd))
+        {
+            _hWnd = NULL; // message processing loop takes care of destroying this window
+            UnregisterClass(_wWindowClass.c_str(), _hInstance);
+            return false;
+        }
+    }
+
+    return true;
 }
 
 void wnd::GetDesktopResolution(int& horizontal, int& vertical)
@@ -51,6 +103,20 @@ void wnd::GetDesktopResolution(int& horizontal, int& vertical)
     GetWindowRect(hDesktop, &desktop);
     horizontal = desktop.right;
     vertical = desktop.bottom;
+}
+
+wnd::wnd()
+{
+    GetDesktopResolution(_NATIVE_WIDTH, _NATIVE_HEIGHT);
+}
+
+wnd::~wnd()
+{
+    if (_hWnd != NULL)
+    {
+        UnregisterClass(_wWindowClass.c_str(), _hInstance);
+        DestroyWindow(_hWnd);
+    }
 }
 
 wnd* window = new wnd();
