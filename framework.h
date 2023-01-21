@@ -19,7 +19,5 @@
 
 // Utils
 #include <string>
-
-// Screen Resolution
-#define SCREEN_WIDTH 1600
-#define SCREEN_HEIGHT 1200
+#include "StringConverter.h"
+#include "ErrorLogger.h"

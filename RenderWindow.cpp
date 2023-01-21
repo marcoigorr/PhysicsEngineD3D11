@@ -1,8 +1,4 @@
-#include "pch.h"
-#include "wnd.h"
-
-#include "StringConverter.h"
-#include "ErrorLogger.h"
+#include "WindowContainer.h"
 
 LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -10,7 +6,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
     {
     case WM_NCCREATE:
     {
-        OutputDebugStringA("The window was created!");
+        OutputDebugStringA("[+] The window was created! ");
         return DefWindowProc(hWnd, message, wParam, lParam);
     }
     default:
@@ -18,7 +14,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
     }
 }
 
-bool wnd::CreateWnd(HINSTANCE hInstance, std::string title, std::string wclass, int width, int height)
+bool RenderWindow::CreateWnd(HINSTANCE hInstance, std::string title, std::string wclass, int width, int height)
 {
     _hInstance = hInstance;
     _width = width;
@@ -28,20 +24,7 @@ bool wnd::CreateWnd(HINSTANCE hInstance, std::string title, std::string wclass, 
     _sWindowClass = wclass;
     _wWindowClass = StringConverter::StringToWide(wclass);
 
-    WNDCLASSEX wc;
-    ZeroMemory(&wc, sizeof(WNDCLASSEX));
-
-    // Filling needed information
-    wc.cbSize = sizeof(WNDCLASSEX);
-    wc.style = CS_HREDRAW | CS_VREDRAW;
-    wc.lpfnWndProc = WindowProc;
-    wc.hInstance = hInstance;
-    wc.hCursor = LoadCursor(NULL, IDC_ARROW);
-    // wc.hbrBackground = (HBRUSH)COLOR_WINDOW;
-    wc.lpszClassName = _wWindowClass.c_str();
-
-    // Register window class
-    RegisterClassEx(&wc);
+    this->RegisterWindowClass();
       
     // Using AdjustWindowRect to set an accurate size of the drawing area
     RECT wr = { 0, 0, width, height };
@@ -51,9 +34,9 @@ bool wnd::CreateWnd(HINSTANCE hInstance, std::string title, std::string wclass, 
     _hWnd = CreateWindowEx(NULL,
         _wWindowClass.c_str(),
         _wWindowTitle.c_str(),
-        WS_OVERLAPPEDWINDOW & ~WS_THICKFRAME,    // window flags
-        0,  // the starting x and y positions should be 0
-        0,
+        WS_OVERLAPPEDWINDOW & ~WS_THICKFRAME,  // window flags
+        0,  // the starting x position
+        0,  // the starting y positions
         wr.right - wr.left,  // width of window
         wr.bottom - wr.top,  // height of window
         NULL,
@@ -66,11 +49,46 @@ bool wnd::CreateWnd(HINSTANCE hInstance, std::string title, std::string wclass, 
         ErrorLogger::Log(GetLastError(), "CreateWindowEx Failed for window " + _sWindowTitle);
         return false;
     }
+
+    // Show the window and set focus
+    ShowWindow(_hWnd, SW_SHOW);
+    SetForegroundWindow(_hWnd);
+    SetFocus(_hWnd);
     
     return true;
 }
 
-bool wnd::ProcessMessages()
+RenderWindow::~RenderWindow()
+{
+    if (_hWnd != NULL)
+    {
+        UnregisterClass(_wWindowClass.c_str(), _hInstance);
+        DestroyWindow(_hWnd);
+    }
+}
+
+void RenderWindow::RegisterWindowClass(void)
+{
+    WNDCLASSEX wc;
+    ZeroMemory(&wc, sizeof(WNDCLASSEX));
+
+    wc.style = CS_HREDRAW | CS_VREDRAW;
+    wc.lpfnWndProc = WindowProc;
+    wc.cbClsExtra = 0;
+    wc.cbWndExtra = 0;
+    wc.hInstance = _hInstance;
+    wc.hIcon = NULL;
+    wc.hIconSm = NULL;
+    wc.hCursor = LoadCursor(NULL, IDC_ARROW);
+    wc.hbrBackground = NULL;
+    wc.lpszMenuName = NULL;
+    wc.lpszClassName = _wWindowClass.c_str();
+    wc.cbSize = sizeof(WNDCLASSEX);           
+
+    RegisterClassEx(&wc);
+}
+
+bool RenderWindow::ProcessMessages()
 {
     // Handle windows messages
     MSG msg;
@@ -96,27 +114,7 @@ bool wnd::ProcessMessages()
     return true;
 }
 
-void wnd::GetDesktopResolution(int& horizontal, int& vertical)
+HWND RenderWindow::GetHWND() const
 {
-    RECT desktop;
-    const HWND hDesktop = GetDesktopWindow();
-    GetWindowRect(hDesktop, &desktop);
-    horizontal = desktop.right;
-    vertical = desktop.bottom;
+    return _hWnd;
 }
-
-wnd::wnd()
-{
-    GetDesktopResolution(_NATIVE_WIDTH, _NATIVE_HEIGHT);
-}
-
-wnd::~wnd()
-{
-    if (_hWnd != NULL)
-    {
-        UnregisterClass(_wWindowClass.c_str(), _hInstance);
-        DestroyWindow(_hWnd);
-    }
-}
-
-wnd* window = new wnd();

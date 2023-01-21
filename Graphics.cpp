@@ -1,9 +1,6 @@
-#include "pch.h"
-#include "dx11.h"
+#include "Graphics.h"
 
-#include "Vertexh.h"
-
-void Direct3D11::InitD3D(HWND hWnd)
+bool Graphics::InitD3D(HWND hWnd, int width, int height)
 {
     // Struct hold information about swap chain
     DXGI_SWAP_CHAIN_DESC scd;
@@ -18,31 +15,43 @@ void Direct3D11::InitD3D(HWND hWnd)
     scd.OutputWindow = hWnd;                                // the window to be used
     scd.SampleDesc.Count = 8;                               // MSAA (Anti-Alias)
     scd.Windowed = TRUE;                                    // windowed/full-screen mode
-    scd.BufferDesc.Width = SCREEN_WIDTH;
-    scd.BufferDesc.Height = SCREEN_HEIGHT;
+    scd.BufferDesc.Width = width;
+    scd.BufferDesc.Height = height;
     scd.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;     // allow full-screen switching
 
+    HRESULT hr;
     // Create device, device context and swap chain using the information in the scd struct
-    D3D11CreateDeviceAndSwapChain(NULL,
-        D3D_DRIVER_TYPE_HARDWARE,
-        NULL,
-        NULL,
-        NULL,
-        NULL,
-        D3D11_SDK_VERSION,
-        &scd,
-        &_swapchain,
-        &_dev,
-        NULL,
-        &_devcon);
+    hr = D3D11CreateDeviceAndSwapChain( NULL,
+                                        D3D_DRIVER_TYPE_HARDWARE,
+                                        NULL,
+                                        NULL,
+                                        NULL,
+                                        NULL,
+                                        D3D11_SDK_VERSION,
+                                        &scd,
+                                        &_swapchain,
+                                        &_dev,
+                                        NULL,
+                                        &_devcon);
+
+    if (FAILED(hr))
+    {
+        ErrorLogger::Log(hr, "Failed to create device and swapchain.");
+        return false;
+    }
 
     // Get address of back buffer
     ID3D11Texture2D* pBackBuffer;
     _swapchain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&pBackBuffer);
 
     // Use the back buffer address to create the render target
-    _dev->CreateRenderTargetView(pBackBuffer, NULL, &_backbuffer);
+    hr = _dev->CreateRenderTargetView(pBackBuffer, NULL, &_backbuffer);
     pBackBuffer->Release();
+    if (FAILED(hr))
+    {
+        ErrorLogger::Log(hr, "Failed to create render target view.");
+        return false;
+    }
 
     // Set render target as the back buffer
     _devcon->OMSetRenderTargets(1, &_backbuffer, NULL);
@@ -53,31 +62,35 @@ void Direct3D11::InitD3D(HWND hWnd)
 
     viewport.TopLeftX = 0;
     viewport.TopLeftY = 0;
-    viewport.Width = SCREEN_WIDTH;
-    viewport.Height = SCREEN_HEIGHT;
+    viewport.Width = width;
+    viewport.Height = height;
 
     _devcon->RSSetViewports(1, &viewport);
 
-    InitPipeline();
-    InitGraphics();
+    if (!this->InitPipeline())
+        return false;
+    if (!this->InitGraphicsD3D11())
+        return false;
+
+    return true;
 }
 
-void Direct3D11::CleanD3D(void)
+void Graphics::CleanD3D(void)
 {
     _swapchain->SetFullscreenState(FALSE, NULL);    // switch to windowed mode
 
     // close and release all existing COM objects
-    _pLayout->Release();
-    _pVS->Release();
-    _pPS->Release();
-    _pVBuffer ->Release();
-    _swapchain->Release();
-    _backbuffer->Release();
-    _dev->Release();
-    _devcon->Release();
+    if (_pLayout) _pLayout->Release();
+    if (_pVS) _pVS->Release();
+    if (_pPS) _pPS->Release();
+    if (_pVBuffer) _pVBuffer->Release();
+    if (_swapchain) _swapchain->Release();
+    if (_backbuffer) _backbuffer->Release();
+    if (_dev) _dev->Release();
+    if (_devcon) _devcon->Release();
 }
 
-void Direct3D11::RenderFrame(void)
+void Graphics::RenderFrame(void)
 {
     // Clear the back buffer to a color
     _devcon->ClearRenderTargetView(_backbuffer, D3DXCOLOR(0.0f, 0.2f, 0.4f, 1.0f));
@@ -99,16 +112,40 @@ void Direct3D11::RenderFrame(void)
     _swapchain->Present(0, 0);
 }
 
-void Direct3D11::InitPipeline(void)
+bool Graphics::InitPipeline(void)
 {
     // Load and compile the two shaders
     ID3D10Blob* VS, * PS;  // buffer with compiled code of the shader (COM obj)
-    D3DX11CompileFromFile(L"vertexshader.hlsl", 0, 0, "VShader", "vs_5_0", 0, 0, 0, &VS, 0, 0);
-    D3DX11CompileFromFile(L"pixelshader.hlsl", 0, 0, "PShader", "ps_5_0", 0, 0, 0, &PS, 0, 0);
+    
+    HRESULT hr;
+    hr = D3DX11CompileFromFile(L"vertexshader.hlsl", 0, 0, "main", "vs_5_0", 0, 0, 0, &VS, 0, 0);
+    if (FAILED(hr))
+    {
+        ErrorLogger::Log(hr, "Failed to compile vertex shader.");
+        return false;
+    }
+
+    hr = D3DX11CompileFromFile(L"pixelshader.hlsl", 0, 0, "main", "ps_5_0", 0, 0, 0, &PS, 0, 0);
+    if (FAILED(hr))
+    {
+        ErrorLogger::Log(hr, "Failed to compile pixel shader.");
+        return false;
+    }
 
     // Encapsulate shaders into shader objects
-    _dev->CreateVertexShader(VS->GetBufferPointer(), VS->GetBufferSize(), NULL, &_pVS);
-    _dev->CreatePixelShader(PS->GetBufferPointer(), PS->GetBufferSize(), NULL, &_pPS);
+    hr = _dev->CreateVertexShader(VS->GetBufferPointer(), VS->GetBufferSize(), NULL, &_pVS);
+    if (FAILED(hr))
+    {
+        ErrorLogger::Log(hr, "Failed to create vertex shader.");
+        return false;
+    }
+    
+    hr = _dev->CreatePixelShader(PS->GetBufferPointer(), PS->GetBufferSize(), NULL, &_pPS);
+    if (FAILED(hr))
+    {
+        ErrorLogger::Log(hr, "Failed to create pixel shader.");
+        return false;
+    }
 
     // Activate shaders
     _devcon->VSSetShader(_pVS, 0, 0);
@@ -121,18 +158,25 @@ void Direct3D11::InitPipeline(void)
         {"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0}, // offset 0xC
     };
 
-    _dev->CreateInputLayout(ied, ARRAYSIZE(ied), VS->GetBufferPointer(), VS->GetBufferSize(), &_pLayout);
+    hr = _dev->CreateInputLayout(ied, ARRAYSIZE(ied), VS->GetBufferPointer(), VS->GetBufferSize(), &_pLayout);
+    if (FAILED(hr))
+    {
+        ErrorLogger::Log(hr, "Failed to create Input layout.");
+        return false;
+    }
     _devcon->IASetInputLayout(_pLayout);
+
+    return true;
 }
 
-void Direct3D11::InitGraphics(void)
+bool Graphics::InitGraphicsD3D11(void)
 {
     // create a triangle using the VERTEX struct
     Vertex Triangle[] =
     {
-        {0.0f, 0.0f},
-        {0.0f, 0.0f},
-        {0.0f, 0.0f}
+        {0.0f, 0.5f},
+        {0.45f, -0.5f},
+        {-0.45f, -0.5f}
     };
 
     D3D11_BUFFER_DESC bd;
@@ -143,13 +187,19 @@ void Direct3D11::InitGraphics(void)
     bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;                // use as a vertex buffer
     bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;             // allow CPU to write in buffer
 
-    _dev->CreateBuffer(&bd, NULL, &_pVBuffer);     // create the buffer
+    HRESULT hr;
+    hr = _dev->CreateBuffer(&bd, NULL, &_pVBuffer);     // create the buffer
+    if (FAILED(hr))
+    {
+        ErrorLogger::Log(hr, "Failed to create buffer.");
+        return false;
+    }
 
     // Copy the vertices into the buffer
     D3D11_MAPPED_SUBRESOURCE ms;
     _devcon->Map(_pVBuffer, NULL, D3D11_MAP_WRITE_DISCARD, NULL, &ms);    // map the buffer
     memcpy(ms.pData, Triangle, sizeof(Triangle));                 // copy the data
     _devcon->Unmap(_pVBuffer, NULL);        // unmap the buffer, allow the gpu to access the buffer
-}
 
-Direct3D11* d3d11 = new Direct3D11();
+    return true;
+}

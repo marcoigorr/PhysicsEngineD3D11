@@ -22,11 +22,14 @@
     <Filter Include="Graphics">
       <UniqueIdentifier>{99ad7dc4-ea59-43f3-9167-1258053f3eb7}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Graphics\Direct3D11">
-      <UniqueIdentifier>{bfb9c40a-882f-4121-9257-4af755e4b39e}</UniqueIdentifier>
+    <Filter Include="Engine">
+      <UniqueIdentifier>{e378ecfa-0a27-4f97-82b5-c5cf1aacb092}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Window">
+    <Filter Include="RenderWindow">
       <UniqueIdentifier>{bec25f62-da02-4c81-8dd1-fb2d23755408}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="WindowContainer">
+      <UniqueIdentifier>{df8596e2-41d9-4fbb-9553-0aa2cfe5288a}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -36,11 +39,8 @@
     <ClInclude Include="pch.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="wnd.h">
-      <Filter>Window</Filter>
-    </ClInclude>
-    <ClInclude Include="dx11.h">
-      <Filter>Graphics\Direct3D11</Filter>
+    <ClInclude Include="RenderWindow.h">
+      <Filter>RenderWindow</Filter>
     </ClInclude>
     <ClInclude Include="ErrorLogger.h">
       <Filter>ErrorLogger</Filter>
@@ -51,7 +51,16 @@
     <ClInclude Include="StringConverter.cpp">
       <Filter>StringConverter</Filter>
     </ClInclude>
-    <ClInclude Include="Vertexh.h">
+    <ClInclude Include="Vertex.h">
+      <Filter>Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine.h">
+      <Filter>Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="WindowContainer.h">
+      <Filter>WindowContainer</Filter>
+    </ClInclude>
+    <ClInclude Include="Graphics.h">
       <Filter>Graphics</Filter>
     </ClInclude>
   </ItemGroup>
@@ -62,14 +71,20 @@
     <ClCompile Include="pch.cpp">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="wnd.cpp">
-      <Filter>Window</Filter>
-    </ClCompile>
-    <ClCompile Include="dx11.cpp">
-      <Filter>Graphics\Direct3D11</Filter>
+    <ClCompile Include="RenderWindow.cpp">
+      <Filter>RenderWindow</Filter>
     </ClCompile>
     <ClCompile Include="ErrorLogger.cpp">
       <Filter>ErrorLogger</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine.cpp">
+      <Filter>Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="WindowContainer.cpp">
+      <Filter>WindowContainer</Filter>
+    </ClCompile>
+    <ClCompile Include="Graphics.cpp">
+      <Filter>Graphics</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

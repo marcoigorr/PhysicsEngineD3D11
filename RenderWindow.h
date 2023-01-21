@@ -1,14 +1,18 @@
 #pragma once
+#include "ErrorLogger.h"
 
-class wnd
+class WindowContainer;
+
+class RenderWindow
 {
 public:
-	wnd();
-	~wnd();
+	~RenderWindow();
 
 	bool CreateWnd(HINSTANCE hInstance, std::string sTitle, std::string sClass, int width, int height);
+	void RegisterWindowClass(void);
 	bool ProcessMessages();
-	void GetDesktopResolution(int& horizontal, int& vertical);
+
+	HWND GetHWND() const;
 
 	HWND _hWnd = NULL; // handle for the window
 	HINSTANCE _hInstance = NULL; // handle to application instance
@@ -18,8 +22,4 @@ public:
 	std::wstring _wWindowClass = L"";
 	int _width = 0;
 	int _height = 0;
-	int _NATIVE_WIDTH = 0;
-	int _NATIVE_HEIGHT = 0;
 };
-
-extern wnd* window;
