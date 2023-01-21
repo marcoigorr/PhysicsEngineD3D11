@@ -7,7 +7,7 @@ bool Graphics::InitD3D(HWND hWnd, int width, int height)
 
     // Set scd struct to NULL
     ZeroMemory(&scd, sizeof(DXGI_SWAP_CHAIN_DESC));
-
+    
     // Fill the swap chain description struct
     scd.BufferCount = 1;                                    // one back buffer
     scd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;     // use 32-bit color
@@ -19,7 +19,8 @@ bool Graphics::InitD3D(HWND hWnd, int width, int height)
     scd.BufferDesc.Height = height;
     scd.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;     // allow full-screen switching
 
-    HRESULT hr;
+    HRESULT hr;   
+    
     // Create device, device context and swap chain using the information in the scd struct
     hr = D3D11CreateDeviceAndSwapChain( NULL,
                                         D3D_DRIVER_TYPE_HARDWARE,
@@ -52,6 +53,9 @@ bool Graphics::InitD3D(HWND hWnd, int width, int height)
         ErrorLogger::Log(hr, "Failed to create render target view.");
         return false;
     }
+
+    UINT pNumQualityLevels;
+    hr = _dev->CheckMultisampleQualityLevels(DXGI_FORMAT_R8G8B8A8_UNORM, 8, &pNumQualityLevels);
 
     // Set render target as the back buffer
     _devcon->OMSetRenderTargets(1, &_backbuffer, NULL);
@@ -93,23 +97,29 @@ void Graphics::CleanD3D(void)
 void Graphics::RenderFrame(void)
 {
     // Clear the back buffer to a color
-    _devcon->ClearRenderTargetView(_backbuffer, D3DXCOLOR(0.0f, 0.2f, 0.4f, 1.0f));
+    _devcon->ClearRenderTargetView(_backbuffer, D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f));
 
     {
+        _devcon->IASetInputLayout(_pLayout);
+
+        // Tell Direct3D which type of primitive to use
+        _devcon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+        // Activate shaders
+        _devcon->VSSetShader(_pVS, 0, 0);
+        _devcon->PSSetShader(_pPS, 0, 0);
+
         // Tell the GPU which vertices to read from when rendering
         UINT stride = sizeof(Vertex);
         UINT offset = 0;
-        _devcon->IASetVertexBuffers(0, 1, &_pVBuffer, &stride, &offset);
-
-        // Tell Direct3D which type of primitive to use
-        _devcon->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+        _devcon->IASetVertexBuffers(0, 1, &_pVBuffer, &stride, &offset);        
 
         // Draw the vertex buffer to the back buffer
-        _devcon->Draw(3, 0);    // draw 3 verticies, starting from vertex 0
+        _devcon->Draw(3, 0);    // draw x verticies, starting from vertex 0
     }
 
     // Switch back buffer and front buffer
-    _swapchain->Present(0, 0);
+    _swapchain->Present(0, 0); // 1 for VSync
 }
 
 bool Graphics::InitPipeline(void)
@@ -118,14 +128,14 @@ bool Graphics::InitPipeline(void)
     ID3D10Blob* VS, * PS;  // buffer with compiled code of the shader (COM obj)
     
     HRESULT hr;
-    hr = D3DX11CompileFromFile(L"vertexshader.hlsl", 0, 0, "main", "vs_5_0", 0, 0, 0, &VS, 0, 0);
+    hr = D3DX11CompileFromFile(L"vertexshader.hlsl", 0, 0, "main", "vs_4_0", 0, 0, 0, &VS, 0, 0);
     if (FAILED(hr))
     {
         ErrorLogger::Log(hr, "Failed to compile vertex shader.");
         return false;
     }
 
-    hr = D3DX11CompileFromFile(L"pixelshader.hlsl", 0, 0, "main", "ps_5_0", 0, 0, 0, &PS, 0, 0);
+    hr = D3DX11CompileFromFile(L"pixelshader.hlsl", 0, 0, "main", "ps_4_0", 0, 0, 0, &PS, 0, 0);
     if (FAILED(hr))
     {
         ErrorLogger::Log(hr, "Failed to compile pixel shader.");
@@ -147,15 +157,11 @@ bool Graphics::InitPipeline(void)
         return false;
     }
 
-    // Activate shaders
-    _devcon->VSSetShader(_pVS, 0, 0);
-    _devcon->PSSetShader(_pPS, 0, 0);
-
     // Creating input layout to let gpu organize data properly
     D3D11_INPUT_ELEMENT_DESC ied[] =
     {
-        {"POSITION", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0}, // offset 0x0
-        {"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0}, // offset 0xC
+        {"POSITION", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0  },
+		{"COLOR", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0  },
     };
 
     hr = _dev->CreateInputLayout(ied, ARRAYSIZE(ied), VS->GetBufferPointer(), VS->GetBufferSize(), &_pLayout);
@@ -164,7 +170,6 @@ bool Graphics::InitPipeline(void)
         ErrorLogger::Log(hr, "Failed to create Input layout.");
         return false;
     }
-    _devcon->IASetInputLayout(_pLayout);
 
     return true;
 }
@@ -172,33 +177,37 @@ bool Graphics::InitPipeline(void)
 bool Graphics::InitGraphicsD3D11(void)
 {
     // create a triangle using the VERTEX struct
-    Vertex Triangle[] =
+    Vertex v[] =
     {
-        {0.0f, 0.5f},
-        {0.45f, -0.5f},
-        {-0.45f, -0.5f}
+        {-0.5f, -0.5f, 1.0f, 0.0f, 0.0f},
+        {0.0f, 0.5f, 0.0f, 1.0f, 0.0f},
+        {0.5f, -0.5f, 0.0f, 0.0f, 1.0f},
     };
 
-    D3D11_BUFFER_DESC bd;
-    ZeroMemory(&bd, sizeof(bd));
+    D3D11_BUFFER_DESC vertexBufferDesc;
+    ZeroMemory(&vertexBufferDesc, sizeof(vertexBufferDesc));
 
-    bd.Usage = D3D11_USAGE_DYNAMIC;                         // write access access by CPU and GPU
-    bd.ByteWidth = sizeof(Vertex) * ARRAYSIZE(Triangle);    // size is the VERTEX struct * 3
-    bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;                // use as a vertex buffer
-    bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;             // allow CPU to write in buffer
+    vertexBufferDesc.Usage = D3D11_USAGE_DYNAMIC;                         // write access access by CPU and GPU
+    vertexBufferDesc.ByteWidth = sizeof(Vertex) * ARRAYSIZE(v);           // size is the VERTEX struct * 3
+    vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;                // use as a vertex buffer
+    vertexBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;             // allow CPU to write in buffer
+
+    D3D11_SUBRESOURCE_DATA vertexBufferData;
+    ZeroMemory(&vertexBufferData, sizeof(vertexBufferData));
+    vertexBufferData.pSysMem = v;
 
     HRESULT hr;
-    hr = _dev->CreateBuffer(&bd, NULL, &_pVBuffer);     // create the buffer
+    hr = _dev->CreateBuffer(&vertexBufferDesc, &vertexBufferData, &_pVBuffer);     // create the buffer
     if (FAILED(hr))
     {
-        ErrorLogger::Log(hr, "Failed to create buffer.");
+        ErrorLogger::Log(hr, "Failed to create vertex buffer.");
         return false;
     }
 
     // Copy the vertices into the buffer
     D3D11_MAPPED_SUBRESOURCE ms;
     _devcon->Map(_pVBuffer, NULL, D3D11_MAP_WRITE_DISCARD, NULL, &ms);    // map the buffer
-    memcpy(ms.pData, Triangle, sizeof(Triangle));                 // copy the data
+    memcpy(ms.pData, v, sizeof(v));                 // copy the data
     _devcon->Unmap(_pVBuffer, NULL);        // unmap the buffer, allow the gpu to access the buffer
 
     return true;
