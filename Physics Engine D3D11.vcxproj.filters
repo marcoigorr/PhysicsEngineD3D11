@@ -13,50 +13,65 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="wnd">
-      <UniqueIdentifier>{bec25f62-da02-4c81-8dd1-fb2d23755408}</UniqueIdentifier>
+    <Filter Include="Source Files\Graphics">
+      <UniqueIdentifier>{99ad7dc4-ea59-43f3-9167-1258053f3eb7}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Direct3D11">
-      <UniqueIdentifier>{bfb9c40a-882f-4121-9257-4af755e4b39e}</UniqueIdentifier>
+    <Filter Include="Header Files\Graphics">
+      <UniqueIdentifier>{98e1c864-8457-453d-82e6-f505515a26c2}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="framework.h">
+    <ClInclude Include="Vertex.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="pch.h">
+    <ClInclude Include="ErrorLogger.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="wnd.h">
-      <Filter>wnd</Filter>
+    <ClInclude Include="WindowContainer.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="dx11.h">
-      <Filter>Direct3D11</Filter>
+    <ClInclude Include="StringConverter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderWindow.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="StringConverter.cpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Graphics.h">
+      <Filter>Header Files\Graphics</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="pch.cpp">
-      <Filter>Header Files</Filter>
+    <ClCompile Include="ErrorLogger.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="wnd.cpp">
-      <Filter>wnd</Filter>
+    <ClCompile Include="WindowContainer.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="dx11.cpp">
-      <Filter>Direct3D11</Filter>
+    <ClCompile Include="Engine.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="RenderWindow.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Graphics.cpp">
+      <Filter>Source Files\Graphics</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="small.ico">
+    <FxCompile Include="vertexshader.hlsl">
       <Filter>Resource Files</Filter>
-    </Image>
-    <Image Include="Physics Engine D3D11.ico">
+    </FxCompile>
+    <FxCompile Include="pixelshader.hlsl">
       <Filter>Resource Files</Filter>
-    </Image>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="shaders.shader" />
+    </FxCompile>
   </ItemGroup>
 </Project>
