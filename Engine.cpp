@@ -2,6 +2,8 @@
 
 bool Engine::Initialize(HINSTANCE hInstance, std::string window_title, std::string window_class, int width, int height)
 {
+	_timer.Start();
+
 	if (!this->render_window.CreateWnd(hInstance, window_title, window_class, width, height))
 		return false;
 
@@ -11,14 +13,20 @@ bool Engine::Initialize(HINSTANCE hInstance, std::string window_title, std::stri
 	return true;
 }
 
+void Engine::CleanD3D()
+{
+	this->gfx.CleanD3D();
+}
+
 bool Engine::ProcessMessages()
 {
 	return this->render_window.ProcessMessages();
 }
 
-void Engine::CleanD3D()
+void Engine::Update()
 {
-	this->gfx.CleanD3D();
+	float dt = _timer.GetMillisecondElapsed();
+	_timer.Restart();
 }
 
 void Engine::RenderFrame()
