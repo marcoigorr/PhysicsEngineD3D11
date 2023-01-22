@@ -13,6 +13,34 @@ bool Graphics::Initialize(HWND hWnd, int width, int height)
     if (!this->InitGraphicsD3D11())
         return false;
 
+    // Setup ImGui
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    
+    ImGuiIO& io = ImGui::GetIO();
+    io.IniFilename = nullptr;
+    io.LogFilename = nullptr;
+    io.WantSaveIniSettings = false;
+
+    ImGui::StyleColorsDark();
+    ImGuiStyle& style = ImGui::GetStyle();
+    style.WindowMinSize = ImVec2(300, 500);
+    style.WindowTitleAlign = ImVec2(0.50f, 0.50f); // Title
+    // style.WindowPadding = ImVec2(20.0f, 20.0f);
+    // style.WindowRounding = 9.0f;
+    // style.FrameRounding = 12.0f;
+    // style.FramePadding = ImVec2(17.0f, 4.0f);
+    // style.TabRounding = 9.0f;
+    // style.GrabRounding = 10.0f;
+    // style.GrabMinSize = 15.0f;
+    // style.ScrollbarSize = 17.0f;
+    // style.ItemSpacing = ImVec2(13.0f, 4.0f);
+    // style.ItemInnerSpacing = ImVec2(10.0f, 8.0f);
+
+    ImGui_ImplWin32_Init(hWnd);
+    ImGui_ImplDX11_Init(_dev, _devcon);
+    ImGui::StyleColorsDark();
+
     return true;
 }
 
@@ -69,9 +97,6 @@ bool Graphics::InitD3D11(HWND hWnd, int width, int height)
         ErrorLogger::Log(hr, "Failed to create render target view.");
         return false;
     }
-
-    UINT pNumQualityLevels;
-    hr = _dev->CheckMultisampleQualityLevels(DXGI_FORMAT_R8G8B8A8_UNORM, 8, &pNumQualityLevels);
 
     // Set render target as the back buffer
     _devcon->OMSetRenderTargets(1, &_backbuffer, NULL);
@@ -161,9 +186,9 @@ bool Graphics::InitGraphicsD3D11(void)
     Vertex v[] =
     {
         {-0.3f, 0.5f, 1.0f, 0.0f, 0.0f},   
-        {0.3f, 0.5f, 1.0f, 0.0f, 0.0f},  
-        {-0.3f, -0.5f, 1.0f, 0.0f, 0.0f},     
-        {0.3f, -0.5f, 1.0f, 0.0f, 0.0f},   
+        {0.3f, 0.5f, 0.0f, 1.0f, 0.0f},  
+        {-0.3f, -0.5f, 0.0f, 0.0f, 1.0f},     
+        {0.3f, -0.5f, 1.0f, 1.0f, 1.0f},   
     };
 
     D3D11_BUFFER_DESC vertexBufferDesc;
@@ -228,6 +253,17 @@ void Graphics::RenderFrame(void)
             _fpsTimer.Restart();
         }
     }
+
+    // Start ImGui frame
+    ImGui_ImplDX11_NewFrame();
+    ImGui_ImplWin32_NewFrame();
+    ImGui::NewFrame();
+
+    ImGui::Begin("Window");
+    ImGui::End();
+
+    ImGui::Render();
+    ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
     // Switch back buffer and front buffer
     _swapchain->Present(0, 0); // 1 for VSync
