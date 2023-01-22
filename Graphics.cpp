@@ -1,6 +1,20 @@
 #include "Graphics.h"
 
-bool Graphics::InitD3D(HWND hWnd, int width, int height)
+bool Graphics::Initialize(HWND hWnd, int width, int height)
+{
+    if (!this->InitD3D11(hWnd, width, height))
+        return false;
+
+    if (!this->InitPipeline())
+        return false;
+
+    if (!this->InitGraphicsD3D11())
+        return false;
+
+    return true;
+}
+
+bool Graphics::InitD3D11(HWND hWnd, int width, int height)
 {
     // Struct hold information about swap chain
     DXGI_SWAP_CHAIN_DESC scd;
@@ -71,55 +85,20 @@ bool Graphics::InitD3D(HWND hWnd, int width, int height)
 
     _devcon->RSSetViewports(1, &viewport);
 
-    if (!this->InitPipeline())
-        return false;
-    if (!this->InitGraphicsD3D11())
-        return false;
+    // Create rasterizer state
+    D3D11_RASTERIZER_DESC rd;
+    ZeroMemory(&rd, sizeof(D3D11_RASTERIZER_DESC));
 
-    return true;
-}
-
-void Graphics::CleanD3D(void)
-{
-    _swapchain->SetFullscreenState(FALSE, NULL);    // switch to windowed mode
-
-    // close and release all existing COM objects
-    if (_pLayout) _pLayout->Release();
-    if (_pVS) _pVS->Release();
-    if (_pPS) _pPS->Release();
-    if (_pVBuffer) _pVBuffer->Release();
-    if (_swapchain) _swapchain->Release();
-    if (_backbuffer) _backbuffer->Release();
-    if (_dev) _dev->Release();
-    if (_devcon) _devcon->Release();
-}
-
-void Graphics::RenderFrame(void)
-{
-    // Clear the back buffer to a color
-    _devcon->ClearRenderTargetView(_backbuffer, D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f));
-
+    rd.FillMode = D3D11_FILL_MODE::D3D11_FILL_SOLID;
+    rd.CullMode = D3D11_CULL_MODE::D3D11_CULL_BACK;
+    hr = _dev->CreateRasterizerState(&rd, &_rasterizerState);
+    if (FAILED(hr))
     {
-        _devcon->IASetInputLayout(_pLayout);
-
-        // Tell Direct3D which type of primitive to use
-        _devcon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-        // Activate shaders
-        _devcon->VSSetShader(_pVS, 0, 0);
-        _devcon->PSSetShader(_pPS, 0, 0);
-
-        // Tell the GPU which vertices to read from when rendering
-        UINT stride = sizeof(Vertex);
-        UINT offset = 0;
-        _devcon->IASetVertexBuffers(0, 1, &_pVBuffer, &stride, &offset);        
-
-        // Draw the vertex buffer to the back buffer
-        _devcon->Draw(3, 0);    // draw x verticies, starting from vertex 0
+        ErrorLogger::Log(hr, "Failed to create rasterizer state.");
+        return false;
     }
 
-    // Switch back buffer and front buffer
-    _swapchain->Present(0, 0); // 1 for VSync
+    return true;
 }
 
 bool Graphics::InitPipeline(void)
@@ -179,9 +158,9 @@ bool Graphics::InitGraphicsD3D11(void)
     // create a triangle using the VERTEX struct
     Vertex v[] =
     {
-        {-0.5f, -0.5f, 1.0f, 0.0f, 0.0f},
+        {-0.3f, -0.3f, 1.0f, 0.0f, 0.0f},
         {0.0f, 0.5f, 0.0f, 1.0f, 0.0f},
-        {0.5f, -0.5f, 0.0f, 0.0f, 1.0f},
+        {0.3f, -0.3f, 0.0f, 0.0f, 1.0f},
     };
 
     D3D11_BUFFER_DESC vertexBufferDesc;
@@ -211,4 +190,50 @@ bool Graphics::InitGraphicsD3D11(void)
     _devcon->Unmap(_pVBuffer, NULL);        // unmap the buffer, allow the gpu to access the buffer
 
     return true;
+}
+
+void Graphics::RenderFrame(void)
+{
+    // Clear the back buffer to a color
+    _devcon->ClearRenderTargetView(_backbuffer, D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f));
+
+    {
+        _devcon->IASetInputLayout(_pLayout);
+
+        // Tell Direct3D which type of primitive to use
+        _devcon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+        
+        _devcon->RSSetState(_rasterizerState);
+
+        // Activate shaders
+        _devcon->VSSetShader(_pVS, 0, 0);
+        _devcon->PSSetShader(_pPS, 0, 0);
+
+        // Tell the GPU which vertices to read from when rendering
+        UINT stride = sizeof(Vertex);
+        UINT offset = 0;
+        _devcon->IASetVertexBuffers(0, 1, &_pVBuffer, &stride, &offset);
+
+        // Draw the vertex buffer to the back buffer
+        _devcon->Draw(3, 0);    // draw x verticies, starting from vertex 0
+    }
+
+    // Switch back buffer and front buffer
+    _swapchain->Present(0, 0); // 1 for VSync
+}
+
+void Graphics::CleanD3D(void)
+{
+    _swapchain->SetFullscreenState(FALSE, NULL);    // switch to windowed mode
+
+    // close and release all existing COM objects
+    if (_rasterizerState) _rasterizerState->Release();
+    if (_pLayout) _pLayout->Release();
+    if (_pVS) _pVS->Release();
+    if (_pPS) _pPS->Release();
+    if (_pVBuffer) _pVBuffer->Release();
+    if (_swapchain) _swapchain->Release();
+    if (_backbuffer) _backbuffer->Release();
+    if (_dev) _dev->Release();
+    if (_devcon) _devcon->Release();
 }

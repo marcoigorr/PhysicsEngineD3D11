@@ -13,19 +13,21 @@
 class Graphics
 {
 public:
-	bool InitD3D(HWND hWnd, int width, int height);     // sets up and initializes Direct3D
-	void CleanD3D(void);         // closes Direct3D and releases memory
-	void RenderFrame(void);		 // renders a single frame
-	bool InitPipeline(void);	 // loads and prepares pipeline
-	bool InitGraphicsD3D11(void);
+	bool Initialize(HWND hWnd, int width, int height);
+	bool InitD3D11(HWND hWnd, int width, int height);   // sets up and initializes Direct3D
+	bool InitPipeline(void);							// loads and prepares pipeline
+	bool InitGraphicsD3D11(void);						// creates the shape to render
+	void CleanD3D(void);								// closes Direct3D and releases memory
+	void RenderFrame(void);								// renders a single frame
 
 private:
-	IDXGISwapChain* _swapchain;
-	ID3D11Device* _dev;
-	ID3D11DeviceContext* _devcon;
-	ID3D11RenderTargetView* _backbuffer;
-	ID3D11VertexShader* _pVS;	// vertex shader (run once for each vertex rendered)
-	ID3D11PixelShader* _pPS;	// pixel shader (run for each pixel drawn
-	ID3D11Buffer* _pVBuffer;	// vertex buffer
-	ID3D11InputLayout* _pLayout; // input layout
+	IDXGISwapChain* _swapchain;					// pointer to swap chain interface
+	ID3D11Device* _dev;							// pointer to Direct3D device interface
+	ID3D11DeviceContext* _devcon;				// pointer to Direct3D device context
+	ID3D11RenderTargetView* _backbuffer;		// pointer to back buffer
+	ID3D11VertexShader* _pVS;					// vertex shader (run once for each vertex rendered)
+	ID3D11PixelShader* _pPS;					// pixel shader (run for each pixel drawn
+	ID3D11Buffer* _pVBuffer;					// vertex buffer
+	ID3D11InputLayout* _pLayout;				// input layout
+	ID3D11RasterizerState* _rasterizerState;
 };

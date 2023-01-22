@@ -5,7 +5,7 @@ bool Engine::Initialize(HINSTANCE hInstance, std::string window_title, std::stri
 	if (!this->render_window.CreateWnd(hInstance, window_title, window_class, width, height))
 		return false;
 
-	if (!this->gfx.InitD3D(render_window.GetHWND(), width, height))
+	if (!this->gfx.Initialize(render_window.GetHWND(), width, height))
 		return false;
 
 	return true;
