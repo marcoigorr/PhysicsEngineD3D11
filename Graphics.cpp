@@ -2,6 +2,8 @@
 
 bool Graphics::Initialize(HWND hWnd, int width, int height)
 {
+    _fpsTimer.Start();
+
     if (!this->InitD3D11(hWnd, width, height))
         return false;
 
@@ -90,7 +92,7 @@ bool Graphics::InitD3D11(HWND hWnd, int width, int height)
     ZeroMemory(&rd, sizeof(D3D11_RASTERIZER_DESC));
 
     rd.FillMode = D3D11_FILL_MODE::D3D11_FILL_SOLID;
-    rd.CullMode = D3D11_CULL_MODE::D3D11_CULL_BACK;
+    rd.CullMode = D3D11_CULL_MODE::D3D11_CULL_NONE;
     hr = _dev->CreateRasterizerState(&rd, &_rasterizerState);
     if (FAILED(hr))
     {
@@ -155,12 +157,13 @@ bool Graphics::InitPipeline(void)
 
 bool Graphics::InitGraphicsD3D11(void)
 {
-    // create a triangle using the VERTEX struct
+    // create a square using the VERTEX struct
     Vertex v[] =
     {
-        {-0.3f, -0.3f, 1.0f, 0.0f, 0.0f},
-        {0.0f, 0.5f, 0.0f, 1.0f, 0.0f},
-        {0.3f, -0.3f, 0.0f, 0.0f, 1.0f},
+        {-0.3f, 0.5f, 1.0f, 0.0f, 0.0f},   
+        {0.3f, 0.5f, 1.0f, 0.0f, 0.0f},  
+        {-0.3f, -0.5f, 1.0f, 0.0f, 0.0f},     
+        {0.3f, -0.5f, 1.0f, 0.0f, 0.0f},   
     };
 
     D3D11_BUFFER_DESC vertexBufferDesc;
@@ -201,7 +204,7 @@ void Graphics::RenderFrame(void)
         _devcon->IASetInputLayout(_pLayout);
 
         // Tell Direct3D which type of primitive to use
-        _devcon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+        _devcon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
         
         _devcon->RSSetState(_rasterizerState);
 
@@ -215,7 +218,15 @@ void Graphics::RenderFrame(void)
         _devcon->IASetVertexBuffers(0, 1, &_pVBuffer, &stride, &offset);
 
         // Draw the vertex buffer to the back buffer
-        _devcon->Draw(3, 0);    // draw x verticies, starting from vertex 0
+        _devcon->Draw(4, 0);    // draw x verticies, starting from vertex 0
+
+        static int fpsCount = 0;
+        fpsCount += 1;
+        if (_fpsTimer.GetMillisecondElapsed() > 1000.0f)
+        {
+            fpsCount = 0;
+            _fpsTimer.Restart();
+        }
     }
 
     // Switch back buffer and front buffer

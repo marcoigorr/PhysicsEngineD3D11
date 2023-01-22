@@ -9,6 +9,7 @@
 #pragma comment (lib, "d3dx10.lib")
 #pragma comment (lib, "D3DCompiler.lib")
 #include "Vertex.h"
+#include "Timer.h"
 
 class Graphics
 {
@@ -30,4 +31,6 @@ private:
 	ID3D11Buffer* _pVBuffer;					// vertex buffer
 	ID3D11InputLayout* _pLayout;				// input layout
 	ID3D11RasterizerState* _rasterizerState;
+
+	Timer _fpsTimer;
 };
