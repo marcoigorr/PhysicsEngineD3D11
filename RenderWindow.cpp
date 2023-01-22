@@ -1,7 +1,12 @@
 #include "WindowContainer.h"
 
+// Forward declare message handler from imgui_impl_win32.cpp
+extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+    if (ImGui_ImplWin32_WndProcHandler(hWnd, message, wParam, lParam))
+        return true;
+
     switch (message)
     {
     case WM_NCCREATE:
@@ -26,11 +31,15 @@ bool RenderWindow::CreateWnd(HINSTANCE hInstance, std::string title, std::string
 
     this->RegisterWindowClass();
       
-    int centerScreenX = GetSystemMetrics(SM_CXSCREEN) / 2 - _width / 2;
-    int centerScreenY = GetSystemMetrics(SM_CYSCREEN) / 2 - _height / 2;
+    int centerScreenX = GetSystemMetrics(SM_CXSCREEN) / 2 - width / 2;
+    int centerScreenY = GetSystemMetrics(SM_CYSCREEN) / 2 - height / 2;
 
     // Using AdjustWindowRect to set an accurate size of the drawing area
-    RECT wr = { centerScreenX, centerScreenY, width, height };
+    RECT wr;
+    wr.left = centerScreenX;
+    wr.top = centerScreenY;
+    wr.right = wr.left + width;
+    wr.bottom = wr.top + height;
     AdjustWindowRect(&wr, WS_CAPTION | WS_MINIMIZEBOX | WS_SYSMENU, FALSE);
 
     // Create the window and use the result as the handle
