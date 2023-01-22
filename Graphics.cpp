@@ -13,10 +13,17 @@ bool Graphics::Initialize(HWND hWnd, int width, int height)
     if (!this->InitGraphicsD3D11())
         return false;
 
-    // Setup ImGui
+    if (!this->InitImGui(hWnd, width, height))
+        return false;
+
+    return true;
+}
+
+bool Graphics::InitImGui(HWND hWnd, int width, int height)
+{
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
-    
+
     ImGuiIO& io = ImGui::GetIO();
     io.IniFilename = nullptr;
     io.LogFilename = nullptr;
@@ -24,7 +31,7 @@ bool Graphics::Initialize(HWND hWnd, int width, int height)
 
     ImGui::StyleColorsDark();
     ImGuiStyle& style = ImGui::GetStyle();
-    style.WindowMinSize = ImVec2(300, 500);
+    style.WindowMinSize = ImVec2(200, 100);
     style.WindowTitleAlign = ImVec2(0.50f, 0.50f); // Title
     // style.WindowPadding = ImVec2(20.0f, 20.0f);
     // style.WindowRounding = 9.0f;
@@ -37,9 +44,17 @@ bool Graphics::Initialize(HWND hWnd, int width, int height)
     // style.ItemSpacing = ImVec2(13.0f, 4.0f);
     // style.ItemInnerSpacing = ImVec2(10.0f, 8.0f);
 
-    ImGui_ImplWin32_Init(hWnd);
-    ImGui_ImplDX11_Init(_dev, _devcon);
-    ImGui::StyleColorsDark();
+    if (!ImGui_ImplWin32_Init(hWnd))
+    {
+        ErrorLogger::Log("ImGui_ImplWin32_Init, failed to initialize ImGui.");
+        return false;
+    }
+
+    if (!ImGui_ImplDX11_Init(_dev, _devcon))
+    {
+        ErrorLogger::Log("ImGui_ImplDX11_Init, failed to initialize ImGui.");
+        return false;
+    }
 
     return true;
 }
@@ -230,7 +245,7 @@ void Graphics::RenderFrame(void)
 
         // Tell Direct3D which type of primitive to use
         _devcon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-        
+
         _devcon->RSSetState(_rasterizerState);
 
         // Activate shaders
@@ -246,25 +261,32 @@ void Graphics::RenderFrame(void)
         _devcon->Draw(4, 0);    // draw x verticies, starting from vertex 0
 
         static int fpsCount = 0;
+        static std::string fpsString = "FPS: 0";
         fpsCount += 1;
         if (_fpsTimer.GetMillisecondElapsed() > 1000.0f)
         {
+            fpsString = "FPS: " + std::to_string(fpsCount);
             fpsCount = 0;
             _fpsTimer.Restart();
         }
+
+        // Start ImGui frame
+        ImGui_ImplDX11_NewFrame();
+        ImGui_ImplWin32_NewFrame();
+        ImGui::NewFrame();
+
+        {
+            ImGui::SetNextWindowSize(ImVec2(300, 500));
+            ImGui::Begin("Window");
+            {
+                ImGui::Text(fpsString.c_str());
+
+            } ImGui::End();           
+        }
+
+        ImGui::Render();
+        ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
     }
-
-    // Start ImGui frame
-    ImGui_ImplDX11_NewFrame();
-    ImGui_ImplWin32_NewFrame();
-    ImGui::NewFrame();
-
-    ImGui::Begin("Window");
-    ImGui::End();
-
-    ImGui::Render();
-    ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
-
     // Switch back buffer and front buffer
     _swapchain->Present(0, 0); // 1 for VSync
 }
