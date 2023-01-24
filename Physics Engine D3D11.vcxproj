@@ -155,6 +155,7 @@
     <ClInclude Include="Timer.h" />
     <ClInclude Include="Vertex.h" />
     <ClInclude Include="RenderWindow.h" />
+    <ClInclude Include="VertexBuffer.h" />
     <ClInclude Include="WindowContainer.h" />
   </ItemGroup>
   <ItemGroup>
