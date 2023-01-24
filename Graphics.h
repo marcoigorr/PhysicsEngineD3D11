@@ -13,6 +13,7 @@
 #include "ImGui/imgui.h"
 #include "ImGui/imgui_impl_win32.h"
 #include "ImGui/imgui_impl_dx11.h"
+#include "VertexBuffer.h"
 
 class Graphics
 {
@@ -32,9 +33,10 @@ private:
 	ID3D11RenderTargetView* _backbuffer;		// pointer to back buffer
 	ID3D11VertexShader* _pVS;					// vertex shader (run once for each vertex rendered)
 	ID3D11PixelShader* _pPS;					// pixel shader (run for each pixel drawn
-	ID3D11Buffer* _pVBuffer;					// vertex buffer
 	ID3D11InputLayout* _pLayout;				// input layout
 	ID3D11RasterizerState* _rasterizerState;
+
+	VertexBuffer<Vertex> _vertexBuffer;
 
 	Timer _fpsTimer;
 };

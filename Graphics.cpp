@@ -149,14 +149,14 @@ bool Graphics::InitPipeline(void)
     ID3D10Blob* VS, * PS;  // buffer with compiled code of the shader (COM obj)
     
     HRESULT hr;
-    hr = D3DX11CompileFromFile(L"vertexshader.hlsl", 0, 0, "main", "vs_4_0", 0, 0, 0, &VS, 0, 0);
+    hr = D3DX11CompileFromFile(L"vertexshader.hlsl", 0, 0, "main", "vs_5_0", 0, 0, 0, &VS, 0, 0);
     if (FAILED(hr))
     {
         ErrorLogger::Log(hr, "Failed to compile vertex shader.");
         return false;
     }
 
-    hr = D3DX11CompileFromFile(L"pixelshader.hlsl", 0, 0, "main", "ps_4_0", 0, 0, 0, &PS, 0, 0);
+    hr = D3DX11CompileFromFile(L"pixelshader.hlsl", 0, 0, "main", "ps_5_0", 0, 0, 0, &PS, 0, 0);
     if (FAILED(hr))
     {
         ErrorLogger::Log(hr, "Failed to compile pixel shader.");
@@ -206,31 +206,13 @@ bool Graphics::InitGraphicsD3D11(void)
         {0.3f, -0.5f, 1.0f, 1.0f, 1.0f},   
     };
 
-    D3D11_BUFFER_DESC vertexBufferDesc;
-    ZeroMemory(&vertexBufferDesc, sizeof(vertexBufferDesc));
-
-    vertexBufferDesc.Usage = D3D11_USAGE_DYNAMIC;                         // write access access by CPU and GPU
-    vertexBufferDesc.ByteWidth = sizeof(Vertex) * ARRAYSIZE(v);           // size is the VERTEX struct * 3
-    vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;                // use as a vertex buffer
-    vertexBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;             // allow CPU to write in buffer
-
-    D3D11_SUBRESOURCE_DATA vertexBufferData;
-    ZeroMemory(&vertexBufferData, sizeof(vertexBufferData));
-    vertexBufferData.pSysMem = v;
-
     HRESULT hr;
-    hr = _dev->CreateBuffer(&vertexBufferDesc, &vertexBufferData, &_pVBuffer);     // create the buffer
+    hr = _vertexBuffer.Initialize(_dev, _devcon, v, ARRAYSIZE(v));     // create the buffer
     if (FAILED(hr))
     {
         ErrorLogger::Log(hr, "Failed to create vertex buffer.");
         return false;
     }
-
-    // Copy the vertices into the buffer
-    D3D11_MAPPED_SUBRESOURCE ms;
-    _devcon->Map(_pVBuffer, NULL, D3D11_MAP_WRITE_DISCARD, NULL, &ms);    // map the buffer
-    memcpy(ms.pData, v, sizeof(v));                 // copy the data
-    _devcon->Unmap(_pVBuffer, NULL);        // unmap the buffer, allow the gpu to access the buffer
 
     return true;
 }
@@ -253,9 +235,8 @@ void Graphics::RenderFrame(void)
         _devcon->PSSetShader(_pPS, 0, 0);
 
         // Tell the GPU which vertices to read from when rendering
-        UINT stride = sizeof(Vertex);
         UINT offset = 0;
-        _devcon->IASetVertexBuffers(0, 1, &_pVBuffer, &stride, &offset);
+        _devcon->IASetVertexBuffers(0, 1, _vertexBuffer.GetAddressOf(), _vertexBuffer.StridePtr(), &offset);
 
         // Draw the vertex buffer to the back buffer
         _devcon->Draw(4, 0);    // draw x verticies, starting from vertex 0
@@ -300,7 +281,7 @@ void Graphics::CleanD3D(void)
     if (_pLayout) _pLayout->Release();
     if (_pVS) _pVS->Release();
     if (_pPS) _pPS->Release();
-    if (_pVBuffer) _pVBuffer->Release();
+    if (_vertexBuffer.GetAddressOf()) _vertexBuffer.Release();
     if (_swapchain) _swapchain->Release();
     if (_backbuffer) _backbuffer->Release();
     if (_dev) _dev->Release();
