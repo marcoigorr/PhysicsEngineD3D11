@@ -36,10 +36,10 @@ public:
 
 		D3D11_BUFFER_DESC indexBufferDesc;
 		ZeroMemory(&indexBufferDesc, sizeof(indexBufferDesc));
-		indexBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+		indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
 		indexBufferDesc.ByteWidth = sizeof(DWORD) * numIndices;
 		indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-		indexBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+		indexBufferDesc.CPUAccessFlags = 0;
 
 		D3D11_SUBRESOURCE_DATA indexBufferData;
 		ZeroMemory(&indexBufferData, sizeof(indexBufferData));
