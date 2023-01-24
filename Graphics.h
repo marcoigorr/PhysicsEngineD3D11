@@ -14,6 +14,7 @@
 #include "ImGui/imgui_impl_win32.h"
 #include "ImGui/imgui_impl_dx11.h"
 #include "VertexBuffer.h"
+#include "IndexBuffer.h"
 
 class Graphics
 {
@@ -37,6 +38,7 @@ private:
 	ID3D11RasterizerState* _rasterizerState;
 
 	VertexBuffer<Vertex> _vertexBuffer;
+	IndexBuffer _indexBuffer;
 
 	Timer _fpsTimer;
 };

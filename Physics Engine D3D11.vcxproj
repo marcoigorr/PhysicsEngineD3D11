@@ -150,6 +150,7 @@
     <ClInclude Include="ImGui\imstb_rectpack.h" />
     <ClInclude Include="ImGui\imstb_textedit.h" />
     <ClInclude Include="ImGui\imstb_truetype.h" />
+    <ClInclude Include="IndexBuffer.h" />
     <ClInclude Include="StringConverter.cpp" />
     <ClInclude Include="StringConverter.h" />
     <ClInclude Include="Timer.h" />

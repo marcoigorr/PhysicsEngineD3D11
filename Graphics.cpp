@@ -200,10 +200,10 @@ bool Graphics::InitGraphicsD3D11(void)
     // create a square using the VERTEX struct
     Vertex v[] =
     {
-        {-0.3f, 0.5f, 1.0f, 0.0f, 0.0f},   
-        {0.3f, 0.5f, 0.0f, 1.0f, 0.0f},  
-        {-0.3f, -0.5f, 0.0f, 0.0f, 1.0f},     
-        {0.3f, -0.5f, 1.0f, 1.0f, 1.0f},   
+        {-0.3f, 0.5f, 1.0f, 0.0f, 0.0f},    // top left [0]
+        {0.3f, 0.5f, 0.0f, 1.0f, 0.0f},     // top right [1]
+        {-0.3f, -0.5f, 0.0f, 0.0f, 1.0f},   // bottom left [2]
+        {0.3f, -0.5f, 1.0f, 1.0f, 1.0f},    // bottom right [3]
     };
 
     HRESULT hr;
@@ -211,6 +211,18 @@ bool Graphics::InitGraphicsD3D11(void)
     if (FAILED(hr))
     {
         ErrorLogger::Log(hr, "Failed to create vertex buffer.");
+        return false;
+    }
+
+    DWORD indices[] =
+    {
+        0,1,2,3
+    };
+
+    hr = _indexBuffer.Initialize(_dev, indices, ARRAYSIZE(indices));
+    if (FAILED(hr))
+    {
+        ErrorLogger::Log(hr, "Failed to create index buffer.");
         return false;
     }
 
@@ -237,9 +249,11 @@ void Graphics::RenderFrame(void)
         // Tell the GPU which vertices to read from when rendering
         UINT offset = 0;
         _devcon->IASetVertexBuffers(0, 1, _vertexBuffer.GetAddressOf(), _vertexBuffer.StridePtr(), &offset);
+        
+        _devcon->IASetIndexBuffer(_indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
 
         // Draw the vertex buffer to the back buffer
-        _devcon->Draw(4, 0);    // draw x verticies, starting from vertex 0
+        _devcon->DrawIndexed(_indexBuffer.BufferSize(), 0, 0);    // draw x verticies, starting from vertex 0
 
         static int fpsCount = 0;
         static std::string fpsString = "FPS: 0";
@@ -281,6 +295,7 @@ void Graphics::CleanD3D(void)
     if (_pLayout) _pLayout->Release();
     if (_pVS) _pVS->Release();
     if (_pPS) _pPS->Release();
+    if (_indexBuffer.GetAddressOf()) _indexBuffer.Release();
     if (_vertexBuffer.GetAddressOf()) _vertexBuffer.Release();
     if (_swapchain) _swapchain->Release();
     if (_backbuffer) _backbuffer->Release();
