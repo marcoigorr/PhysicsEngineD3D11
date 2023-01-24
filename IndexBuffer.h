@@ -36,7 +36,6 @@ public:
 
 		D3D11_BUFFER_DESC indexBufferDesc;
 		ZeroMemory(&indexBufferDesc, sizeof(indexBufferDesc));
-
 		indexBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
 		indexBufferDesc.ByteWidth = sizeof(DWORD) * numIndices;
 		indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
@@ -44,7 +43,6 @@ public:
 
 		D3D11_SUBRESOURCE_DATA indexBufferData;
 		ZeroMemory(&indexBufferData, sizeof(indexBufferData));
-
 		indexBufferData.pSysMem = data;
 
 		HRESULT hr = dev->CreateBuffer(&indexBufferDesc, &indexBufferData, &_buffer);

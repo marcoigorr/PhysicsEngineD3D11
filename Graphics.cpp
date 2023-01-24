@@ -207,7 +207,7 @@ bool Graphics::InitGraphicsD3D11(void)
     };
 
     HRESULT hr;
-    hr = _vertexBuffer.Initialize(_dev, _devcon, v, ARRAYSIZE(v));     // create the buffer
+    hr = _vertexBuffer.Initialize(_dev, v, ARRAYSIZE(v));     // create the buffer
     if (FAILED(hr))
     {
         ErrorLogger::Log(hr, "Failed to create vertex buffer.");
