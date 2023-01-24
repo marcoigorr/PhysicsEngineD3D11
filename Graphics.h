@@ -15,6 +15,8 @@
 #include "ImGui/imgui_impl_dx11.h"
 #include "VertexBuffer.h"
 #include "IndexBuffer.h"
+#include "ConstantBufferTypes.h"
+#include "ConstantBuffer.h"
 
 class Graphics
 {
@@ -39,6 +41,7 @@ private:
 
 	VertexBuffer<Vertex> _vertexBuffer;
 	IndexBuffer _indexBuffer;
+	ConstantBuffer<CB_VS_vertexshader> _constantBuffer;
 
 	Timer _fpsTimer;
 };

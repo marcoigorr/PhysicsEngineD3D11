@@ -226,6 +226,13 @@ bool Graphics::InitGraphicsD3D11(void)
         return false;
     }
 
+    hr = _constantBuffer.Initialize(_dev, _devcon);
+    if (FAILED(hr))
+    {
+        ErrorLogger::Log(hr, "Failed to create constant buffer.");
+        return false;
+    }
+
     return true;
 }
 
@@ -236,20 +243,25 @@ void Graphics::RenderFrame(void)
 
     {
         _devcon->IASetInputLayout(_pLayout);
-
-        // Tell Direct3D which type of primitive to use
         _devcon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-
         _devcon->RSSetState(_rasterizerState);
 
-        // Activate shaders
         _devcon->VSSetShader(_pVS, 0, 0);
         _devcon->PSSetShader(_pPS, 0, 0);
 
-        // Tell the GPU which vertices to read from when rendering
         UINT offset = 0;
+
+        // Update constant buffer
+        static float xOffset = 0.0f;
+        static float yOffset = 0.0f;
+        _constantBuffer._data.xOffset = xOffset;
+        _constantBuffer._data.yOffset = yOffset;
+        if (!_constantBuffer.ApplyChanges())
+            return;
+        _devcon->VSSetConstantBuffers(0, 1, _constantBuffer.GetAddressOf());
+
+        // Square
         _devcon->IASetVertexBuffers(0, 1, _vertexBuffer.GetAddressOf(), _vertexBuffer.StridePtr(), &offset);
-        
         _devcon->IASetIndexBuffer(_indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
 
         // Draw the vertex buffer to the back buffer
@@ -275,6 +287,8 @@ void Graphics::RenderFrame(void)
             ImGui::Begin("Window");
             {
                 ImGui::Text(fpsString.c_str());
+                ImGui::SliderFloat("xOffset", &xOffset, -1.0f, 1.0f, "%.1f", 0);
+                ImGui::SliderFloat("yOffset", &yOffset, -1.0f, 1.0f, "%.1f", 0);
 
             } ImGui::End();           
         }
