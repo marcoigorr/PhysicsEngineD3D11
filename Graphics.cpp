@@ -309,6 +309,7 @@ void Graphics::CleanD3D(void)
     if (_pLayout) _pLayout->Release();
     if (_pVS) _pVS->Release();
     if (_pPS) _pPS->Release();
+    if (_constantBuffer.GetAddressOf()) _constantBuffer.Release();
     if (_indexBuffer.GetAddressOf()) _indexBuffer.Release();
     if (_vertexBuffer.GetAddressOf()) _vertexBuffer.Release();
     if (_swapchain) _swapchain->Release();
