@@ -9,6 +9,8 @@
 #pragma comment (lib, "d3dx10.lib")
 #pragma comment (lib, "D3DCompiler.lib")
 #include "Vertex.h"
+#include <SpriteBatch.h>
+#include <SpriteFont.h>
 #include "Timer.h"
 #include "ImGui/imgui.h"
 #include "ImGui/imgui_impl_win32.h"
@@ -42,6 +44,11 @@ private:
 	VertexBuffer<Vertex> _vertexBuffer;
 	IndexBuffer _indexBuffer;
 	ConstantBuffer<CB_VS_vertexshader> _constantBuffer;
+
+	std::unique_ptr<DirectX::SpriteBatch> _spriteBatch;
+	std::unique_ptr<DirectX::SpriteFont> _spriteFont;
+
+	ID3D11SamplerState* _samplerState;
 
 	Timer _fpsTimer;
 };

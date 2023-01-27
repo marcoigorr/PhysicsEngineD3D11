@@ -3,9 +3,9 @@
 
 struct Vertex {
     Vertex() {}
-    Vertex(float x, float y, float r, float g, float b)
-        : pos(x, y), color(r,g,b) {}
+    Vertex(float x, float y, float u, float v)
+        : pos(x, y), texCoord(u, v) {}
     
     DirectX::XMFLOAT2 pos;
-    DirectX::XMFLOAT3 color; 
+    DirectX::XMFLOAT2 texCoord; 
 };

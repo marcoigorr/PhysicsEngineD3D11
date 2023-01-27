@@ -140,6 +140,27 @@ bool Graphics::InitD3D11(HWND hWnd, int width, int height)
         return false;
     }
 
+    _spriteBatch = std::make_unique<DirectX::SpriteBatch>(_devcon);
+    _spriteFont = std::make_unique<DirectX::SpriteFont>(_dev, L"Data\\Fonts\\arial_14.spritefont");
+
+    // Texture
+    D3D11_SAMPLER_DESC sd;
+    ZeroMemory(&sd, sizeof(D3D11_SAMPLER_DESC));
+    sd.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+    sd.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;  // x coord on texture
+    sd.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+    sd.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+    sd.ComparisonFunc = D3D11_COMPARISON_NEVER;
+    sd.MinLOD = 0;  // Level of detail
+    sd.MaxLOD = D3D11_FLOAT32_MAX;
+    
+    hr = _dev->CreateSamplerState(&sd, &_samplerState);
+    if (FAILED(hr))
+    {
+        ErrorLogger::Log(hr, "Failed to create sampler state.");
+        return false; 
+    }
+
     return true;
 }
 
@@ -182,7 +203,7 @@ bool Graphics::InitPipeline(void)
     D3D11_INPUT_ELEMENT_DESC ied[] =
     {
         {"POSITION", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0  },
-		{"COLOR", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0  },
+		{"TEXCOORD", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0  },
     };
 
     hr = _dev->CreateInputLayout(ied, ARRAYSIZE(ied), VS->GetBufferPointer(), VS->GetBufferSize(), &_pLayout);
@@ -200,10 +221,9 @@ bool Graphics::InitGraphicsD3D11(void)
     // create a square using the VERTEX struct
     Vertex v[] =
     {
-        {-0.3f, 0.5f, 1.0f, 0.0f, 0.0f},    // top left [0]
-        {0.3f, 0.5f, 0.0f, 1.0f, 0.0f},     // top right [1]
-        {-0.3f, -0.5f, 0.0f, 0.0f, 1.0f},   // bottom left [2]
-        {0.3f, -0.5f, 1.0f, 1.0f, 1.0f},    // bottom right [3]
+        Vertex(-0.5f, -0.5f, 0.0f, 1.0f),  // Bottom Left
+        Vertex(0.0f, 0.5f, 0.5f, 0.0f),  // Top middle
+        Vertex(0.5f, -0.5f, 1.0f, 1.0f),  // Bottom right
     };
 
     HRESULT hr;
@@ -243,8 +263,10 @@ void Graphics::RenderFrame(void)
 
     {
         _devcon->IASetInputLayout(_pLayout);
-        _devcon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+        _devcon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
         _devcon->RSSetState(_rasterizerState);
+
+        _devcon->PSSetSamplers(0, 1, &_samplerState);
 
         _devcon->VSSetShader(_pVS, 0, 0);
         _devcon->PSSetShader(_pPS, 0, 0);
@@ -295,6 +317,11 @@ void Graphics::RenderFrame(void)
 
         ImGui::Render();
         ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+
+        // Font Render
+        _spriteBatch->Begin();
+        _spriteFont->DrawString(_spriteBatch.get(), L"HELLO WORLD", DirectX::XMFLOAT2(0, 0), DirectX::Colors::White, 0.0f, DirectX::XMFLOAT2(0.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 1.0f));
+        _spriteBatch->End();
     }
     // Switch back buffer and front buffer
     _swapchain->Present(0, 0); // 1 for VSync
@@ -309,6 +336,7 @@ void Graphics::CleanD3D(void)
     if (_pLayout) _pLayout->Release();
     if (_pVS) _pVS->Release();
     if (_pPS) _pPS->Release();
+    if (_samplerState) _samplerState->Release();
     if (_constantBuffer.GetAddressOf()) _constantBuffer.Release();
     if (_indexBuffer.GetAddressOf()) _indexBuffer.Release();
     if (_vertexBuffer.GetAddressOf()) _vertexBuffer.Release();
