@@ -119,7 +119,6 @@ bool Graphics::InitD3D11(HWND hWnd, int width, int height)
     // Set viewport
     D3D11_VIEWPORT viewport;
     ZeroMemory(&viewport, sizeof(D3D11_VIEWPORT));
-
     viewport.TopLeftX = 0;
     viewport.TopLeftY = 0;
     viewport.Width = width;
@@ -130,9 +129,8 @@ bool Graphics::InitD3D11(HWND hWnd, int width, int height)
     // Create rasterizer state
     D3D11_RASTERIZER_DESC rd;
     ZeroMemory(&rd, sizeof(D3D11_RASTERIZER_DESC));
-
     rd.FillMode = D3D11_FILL_MODE::D3D11_FILL_SOLID;
-    rd.CullMode = D3D11_CULL_MODE::D3D11_CULL_NONE;
+    rd.CullMode = D3D11_CULL_MODE::D3D11_CULL_BACK;
     hr = _dev->CreateRasterizerState(&rd, &_rasterizerState);
     if (FAILED(hr))
     {
@@ -221,9 +219,9 @@ bool Graphics::InitGraphicsD3D11(void)
     // create a square using the VERTEX struct
     Vertex v[] =
     {
-        Vertex(-0.5f, -0.5f, 0.0f, 1.0f),  // Bottom Left
-        Vertex(0.0f, 0.5f, 0.5f, 0.0f),  // Top middle
-        Vertex(0.5f, -0.5f, 1.0f, 1.0f),  // Bottom right
+        Vertex( -0.5f, -0.5f, 0.0f, 1.0f),  // Bottom Left
+        Vertex(  0.0f,  0.5f, 0.5f, 0.0f),  // Top middle
+        Vertex(  0.5f, -0.5f, 1.0f, 1.0f),  // Bottom right
     };
 
     HRESULT hr;
@@ -236,7 +234,7 @@ bool Graphics::InitGraphicsD3D11(void)
 
     DWORD indices[] =
     {
-        0,1,2,3
+        0,1,2
     };
 
     hr = _indexBuffer.Initialize(_dev, indices, ARRAYSIZE(indices));
