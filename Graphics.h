@@ -27,10 +27,10 @@ class Graphics
 {
 public:
 	bool Initialize(HWND hWnd, int width, int height);
-	bool InitD3D11(HWND hWnd, int width, int height);   // sets up and initializes Direct3D
+	bool InitD3D11(HWND hWnd);							// sets up and initializes Direct3D
 	bool InitPipeline(void);							// loads and prepares pipeline
 	bool InitGraphicsD3D11(void);						// creates the shape to render
-	bool InitImGui(HWND hWnd, int width, int height);
+	bool InitImGui(HWND hWnd);
 	void CleanD3D(void);								// closes Direct3D and releases memory
 	void RenderFrame(void);								// renders a single frame
 
@@ -55,4 +55,7 @@ private:
 	ID3D11ShaderResourceView* _particleTexture;
 
 	Timer _fpsTimer;
+
+	int _wWidth;
+	int _wHeight;
 };

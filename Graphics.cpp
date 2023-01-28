@@ -2,9 +2,12 @@
 
 bool Graphics::Initialize(HWND hWnd, int width, int height)
 {
-    _fpsTimer.Start();
+    _wWidth = width;
+    _wHeight = height;
 
-    if (!this->InitD3D11(hWnd, width, height))
+    _fpsTimer.Start();
+    
+    if (!this->InitD3D11(hWnd))
         return false;
 
     if (!this->InitPipeline())
@@ -13,13 +16,13 @@ bool Graphics::Initialize(HWND hWnd, int width, int height)
     if (!this->InitGraphicsD3D11())
         return false;
 
-    if (!this->InitImGui(hWnd, width, height))
+    if (!this->InitImGui(hWnd))
         return false;
 
     return true;
 }
 
-bool Graphics::InitImGui(HWND hWnd, int width, int height)
+bool Graphics::InitImGui(HWND hWnd)
 {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -59,7 +62,7 @@ bool Graphics::InitImGui(HWND hWnd, int width, int height)
     return true;
 }
 
-bool Graphics::InitD3D11(HWND hWnd, int width, int height)
+bool Graphics::InitD3D11(HWND hWnd)
 {
     // Struct hold information about swap chain
     DXGI_SWAP_CHAIN_DESC scd;
@@ -74,8 +77,8 @@ bool Graphics::InitD3D11(HWND hWnd, int width, int height)
     scd.OutputWindow = hWnd;                                // the window to be used
     scd.SampleDesc.Count = 8;                               // MSAA (Anti-Alias)
     scd.Windowed = TRUE;                                    // windowed/full-screen mode
-    scd.BufferDesc.Width = width;
-    scd.BufferDesc.Height = height;
+    scd.BufferDesc.Width = _wWidth;
+    scd.BufferDesc.Height = _wHeight;
     scd.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;     // allow full-screen switching
 
     HRESULT hr;   
@@ -121,8 +124,8 @@ bool Graphics::InitD3D11(HWND hWnd, int width, int height)
     ZeroMemory(&viewport, sizeof(D3D11_VIEWPORT));
     viewport.TopLeftX = 0;
     viewport.TopLeftY = 0;
-    viewport.Width = width;
-    viewport.Height = height;
+    viewport.Width = _wWidth;
+    viewport.Height = _wHeight;
 
     _devcon->RSSetViewports(1, &viewport);
 
@@ -285,7 +288,22 @@ void Graphics::RenderFrame(void)
         // Update constant buffer
         static float xOffset = 0.0f;
         static float yOffset = 0.0f;
-        _constantBuffer._data.mat = DirectX::XMMatrixTranslation(xOffset, yOffset, 0.0f);
+
+        DirectX::XMMATRIX world = DirectX::XMMatrixIdentity();
+        static DirectX::XMVECTOR eyePos = DirectX::XMVectorSet(0.0f, 0.0f, -3.0f, 0.0f);
+        static DirectX::XMVECTOR lookAtPos = DirectX::XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f);  // look at center of the view
+        static DirectX::XMVECTOR upVector = DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);  // positive Y axis = up
+        DirectX::XMMATRIX viewMatrix = DirectX::XMMatrixLookAtLH(eyePos, lookAtPos, upVector);
+
+        float fovDegrees = 90.0f;
+        float fovRadians = (fovDegrees / 360.0f) * DirectX::XM_2PI;
+        float aspectRatio = static_cast<float>(_wWidth) / static_cast<float>(_wHeight);
+        float nearZ = 0.1f;
+        float farZ = 1000.f;
+        DirectX::XMMATRIX projectionMatrix = DirectX::XMMatrixPerspectiveFovLH(fovDegrees, aspectRatio, nearZ, farZ);
+
+        _constantBuffer._data.mat = world * viewMatrix * projectionMatrix;
+        //_constantBuffer._data.mat = DirectX::XMMatrixTranslation(xOffset, yOffset, -3.0f);
         _constantBuffer._data.mat = DirectX::XMMatrixTranspose(_constantBuffer._data.mat);
 
         if (!_constantBuffer.ApplyChanges())
