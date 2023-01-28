@@ -146,8 +146,8 @@ bool Graphics::InitD3D11(HWND hWnd, int width, int height)
     ZeroMemory(&sd, sizeof(D3D11_SAMPLER_DESC));
     sd.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
     sd.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;  // x coord on texture
-    sd.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-    sd.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+    sd.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;  // y
+    sd.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;  // for 3d textures
     sd.ComparisonFunc = D3D11_COMPARISON_NEVER;
     sd.MinLOD = 0;  // Level of detail
     sd.MaxLOD = D3D11_FLOAT32_MAX;
@@ -220,8 +220,12 @@ bool Graphics::InitGraphicsD3D11(void)
     Vertex v[] =
     {
         Vertex( -0.5f, -0.5f, 0.0f, 1.0f),  // Bottom Left
-        Vertex(  0.0f,  0.5f, 0.5f, 0.0f),  // Top middle
-        Vertex(  0.5f, -0.5f, 1.0f, 1.0f),  // Bottom right
+        Vertex( -0.5f,  0.5f, 0.0f, 0.0f),  // Top Left
+        Vertex(  0.5f,  0.5f, 1.0f, 0.0f),  // Top Right
+
+        Vertex( -0.5f, -0.5f, 0.0f, 1.0f),  // Bottom Left
+        Vertex(  0.5f,  0.5f, 1.0f, 0.0f),  // Top Right
+        Vertex(  0.5f, -0.5f, 1.0f, 1.0f),  // Bottom Right
     };
 
     HRESULT hr;
@@ -234,7 +238,7 @@ bool Graphics::InitGraphicsD3D11(void)
 
     DWORD indices[] =
     {
-        0,1,2
+        0,1,2,3,4,5
     };
 
     hr = _indexBuffer.Initialize(_dev, indices, ARRAYSIZE(indices));
@@ -248,6 +252,13 @@ bool Graphics::InitGraphicsD3D11(void)
     if (FAILED(hr))
     {
         ErrorLogger::Log(hr, "Failed to create constant buffer.");
+        return false;
+    } 
+
+    hr = DirectX::CreateWICTextureFromFile(_dev, _devcon, L"Data\\Textures\\particle.png", nullptr, &_particleTexture);
+    if (FAILED(hr))
+    {
+        ErrorLogger::Log(hr, "Failed to create wic texture from file.");
         return false;
     }
 
@@ -274,13 +285,15 @@ void Graphics::RenderFrame(void)
         // Update constant buffer
         static float xOffset = 0.0f;
         static float yOffset = 0.0f;
-        _constantBuffer._data.xOffset = xOffset;
-        _constantBuffer._data.yOffset = yOffset;
+        _constantBuffer._data.mat = DirectX::XMMatrixTranslation(xOffset, yOffset, 0.0f);
+        _constantBuffer._data.mat = DirectX::XMMatrixTranspose(_constantBuffer._data.mat);
+
         if (!_constantBuffer.ApplyChanges())
             return;
         _devcon->VSSetConstantBuffers(0, 1, _constantBuffer.GetAddressOf());
 
         // Square
+        _devcon->PSSetShaderResources(0, 1, &_particleTexture);
         _devcon->IASetVertexBuffers(0, 1, _vertexBuffer.GetAddressOf(), _vertexBuffer.StridePtr(), &offset);
         _devcon->IASetIndexBuffer(_indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
 
@@ -318,7 +331,7 @@ void Graphics::RenderFrame(void)
 
         // Font Render
         _spriteBatch->Begin();
-        _spriteFont->DrawString(_spriteBatch.get(), L"HELLO WORLD", DirectX::XMFLOAT2(0, 0), DirectX::Colors::White, 0.0f, DirectX::XMFLOAT2(0.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 1.0f));
+        _spriteFont->DrawString(_spriteBatch.get(), L"Physics Engine D3D11", DirectX::XMFLOAT2(0, 0), DirectX::Colors::White, 0.0f, DirectX::XMFLOAT2(0.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 1.0f));
         _spriteBatch->End();
     }
     // Switch back buffer and front buffer
@@ -334,6 +347,7 @@ void Graphics::CleanD3D(void)
     if (_pLayout) _pLayout->Release();
     if (_pVS) _pVS->Release();
     if (_pPS) _pPS->Release();
+    if (_particleTexture) _particleTexture->Release();
     if (_samplerState) _samplerState->Release();
     if (_constantBuffer.GetAddressOf()) _constantBuffer.Release();
     if (_indexBuffer.GetAddressOf()) _indexBuffer.Release();

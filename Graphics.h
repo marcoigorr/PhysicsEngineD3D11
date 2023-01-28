@@ -13,6 +13,7 @@
 #include "Vertex.h"
 #include <SpriteBatch.h>
 #include <SpriteFont.h>
+#include <WICTextureLoader.h>
 #include "Timer.h"
 #include "ImGui/imgui.h"
 #include "ImGui/imgui_impl_win32.h"
@@ -51,6 +52,7 @@ private:
 	std::unique_ptr<DirectX::SpriteFont> _spriteFont;
 
 	ID3D11SamplerState* _samplerState;
+	ID3D11ShaderResourceView* _particleTexture;
 
 	Timer _fpsTimer;
 };
