@@ -219,39 +219,9 @@ bool Graphics::InitPipeline(void)
 
 bool Graphics::InitGraphicsD3D11(void)
 {
-    // create a square using the VERTEX struct
-    Vertex v[] =
-    {
-        Vertex( -0.5f, -0.5f, 0.0f, 1.0f),  // Bottom Left
-        Vertex( -0.5f,  0.5f, 0.0f, 0.0f),  // Top Left
-        Vertex(  0.5f,  0.5f, 1.0f, 0.0f),  // Top Right
+    HRESULT hr;     
 
-        Vertex( -0.5f, -0.5f, 0.0f, 1.0f),  // Bottom Left
-        Vertex(  0.5f,  0.5f, 1.0f, 0.0f),  // Top Right
-        Vertex(  0.5f, -0.5f, 1.0f, 1.0f),  // Bottom Right
-    };
-
-    HRESULT hr;
-    hr = _vertexBuffer.Initialize(_dev, v, ARRAYSIZE(v));     // create the buffer
-    if (FAILED(hr))
-    {
-        ErrorLogger::Log(hr, "Failed to create vertex buffer.");
-        return false;
-    }
-
-    DWORD indices[] =
-    {
-        0,1,2,3,4,5
-    };
-
-    hr = _indexBuffer.Initialize(_dev, indices, ARRAYSIZE(indices));
-    if (FAILED(hr))
-    {
-        ErrorLogger::Log(hr, "Failed to create index buffer.");
-        return false;
-    }
-
-    hr = _constantBuffer.Initialize(_dev, _devcon);
+    hr = _cb_vs_vertexshader.Initialize(_dev, _devcon);
     if (FAILED(hr))
     {
         ErrorLogger::Log(hr, "Failed to create constant buffer.");
@@ -265,6 +235,13 @@ bool Graphics::InitGraphicsD3D11(void)
         return false;
     }
 
+    // Initialize Entity
+    if (!_entity.Initialize(_dev, _devcon, _particleTexture, _cb_vs_vertexshader))
+        return false;
+
+    _camera.SetPosition(0.0f, 0.0f, -2.0f);
+    _camera.SetProjectionValues(90.0f, static_cast<float>(_wWidth) / static_cast<float>(_wHeight), 0.1f, 1000.0f);
+
     return true;
 }
 
@@ -273,85 +250,50 @@ void Graphics::RenderFrame(void)
     // Clear the back buffer to a color
     _devcon->ClearRenderTargetView(_backbuffer, D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f));
 
+    _devcon->IASetInputLayout(_pLayout);
+    _devcon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    _devcon->RSSetState(_rasterizerState);
+    _devcon->PSSetSamplers(0, 1, &_samplerState);
+    _devcon->VSSetShader(_pVS, 0, 0);
+    _devcon->PSSetShader(_pPS, 0, 0);
+
     {
-        _devcon->IASetInputLayout(_pLayout);
-        _devcon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-        _devcon->RSSetState(_rasterizerState);
-
-        _devcon->PSSetSamplers(0, 1, &_samplerState);
-
-        _devcon->VSSetShader(_pVS, 0, 0);
-        _devcon->PSSetShader(_pPS, 0, 0);
-
-        UINT offset = 0;
-
-        // Update constant buffer
-        static float xOffset = 0.0f;
-        static float yOffset = 0.0f;
-
-        DirectX::XMMATRIX world = DirectX::XMMatrixIdentity();
-        static DirectX::XMVECTOR eyePos = DirectX::XMVectorSet(0.0f, 0.0f, -3.0f, 0.0f);
-        static DirectX::XMVECTOR lookAtPos = DirectX::XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f);  // look at center of the view
-        static DirectX::XMVECTOR upVector = DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);  // positive Y axis = up
-        DirectX::XMMATRIX viewMatrix = DirectX::XMMatrixLookAtLH(eyePos, lookAtPos, upVector);
-
-        float fovDegrees = 90.0f;
-        float fovRadians = (fovDegrees / 360.0f) * DirectX::XM_2PI;
-        float aspectRatio = static_cast<float>(_wWidth) / static_cast<float>(_wHeight);
-        float nearZ = 0.1f;
-        float farZ = 1000.f;
-        DirectX::XMMATRIX projectionMatrix = DirectX::XMMatrixPerspectiveFovLH(fovDegrees, aspectRatio, nearZ, farZ);
-
-        _constantBuffer._data.mat = world * viewMatrix * projectionMatrix;
-        //_constantBuffer._data.mat = DirectX::XMMatrixTranslation(xOffset, yOffset, -3.0f);
-        _constantBuffer._data.mat = DirectX::XMMatrixTranspose(_constantBuffer._data.mat);
-
-        if (!_constantBuffer.ApplyChanges())
-            return;
-        _devcon->VSSetConstantBuffers(0, 1, _constantBuffer.GetAddressOf());
-
-        // Square
-        _devcon->PSSetShaderResources(0, 1, &_particleTexture);
-        _devcon->IASetVertexBuffers(0, 1, _vertexBuffer.GetAddressOf(), _vertexBuffer.StridePtr(), &offset);
-        _devcon->IASetIndexBuffer(_indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
-
-        // Draw the vertex buffer to the back buffer
-        _devcon->DrawIndexed(_indexBuffer.BufferSize(), 0, 0);    // draw x verticies, starting from vertex 0
-
-        static int fpsCount = 0;
-        static std::string fpsString = "FPS: 0";
-        fpsCount += 1;
-        if (_fpsTimer.GetMillisecondElapsed() > 1000.0f)
-        {
-            fpsString = "FPS: " + std::to_string(fpsCount);
-            fpsCount = 0;
-            _fpsTimer.Restart();
-        }
-
-        // Start ImGui frame
-        ImGui_ImplDX11_NewFrame();
-        ImGui_ImplWin32_NewFrame();
-        ImGui::NewFrame();
-
-        {
-            ImGui::SetNextWindowSize(ImVec2(300, 500));
-            ImGui::Begin("Window");
-            {
-                ImGui::Text(fpsString.c_str());
-                ImGui::SliderFloat("xOffset", &xOffset, -1.0f, 1.0f, "%.1f", 0);
-                ImGui::SliderFloat("yOffset", &yOffset, -1.0f, 1.0f, "%.1f", 0);
-
-            } ImGui::End();           
-        }
-
-        ImGui::Render();
-        ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
-
-        // Font Render
-        _spriteBatch->Begin();
-        _spriteFont->DrawString(_spriteBatch.get(), L"Physics Engine D3D11", DirectX::XMFLOAT2(0, 0), DirectX::Colors::White, 0.0f, DirectX::XMFLOAT2(0.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 1.0f));
-        _spriteBatch->End();
+        _entity.Draw(_camera.GetViewMatrix() * _camera.GetProjectionMatrix());
     }
+
+    // Text / fps
+    static int fpsCount = 0;
+    static std::string fpsString = "FPS: 0";
+    fpsCount += 1;
+    if (_fpsTimer.GetMillisecondElapsed() > 1000.0f)
+    {
+        fpsString = "FPS: " + std::to_string(fpsCount);
+        fpsCount = 0;
+        _fpsTimer.Restart();
+    }
+
+    // Start ImGui frame
+    ImGui_ImplDX11_NewFrame();
+    ImGui_ImplWin32_NewFrame();
+    ImGui::NewFrame();
+
+    {
+        ImGui::SetNextWindowSize(ImVec2(300, 500));
+        ImGui::Begin("Window");
+        {
+            ImGui::Text(fpsString.c_str());
+
+        } ImGui::End();           
+    }
+
+    ImGui::Render();
+    ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+
+    // Font Render
+    _spriteBatch->Begin();
+    _spriteFont->DrawString(_spriteBatch.get(), fpsString.c_str(), DirectX::XMFLOAT2(0, 0), DirectX::Colors::White, 0.0f, DirectX::XMFLOAT2(0.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 1.0f));
+    _spriteBatch->End();
+
     // Switch back buffer and front buffer
     _swapchain->Present(0, 0); // 1 for VSync
 }
@@ -361,15 +303,17 @@ void Graphics::CleanD3D(void)
     _swapchain->SetFullscreenState(FALSE, NULL);    // switch to windowed mode
 
     // close and release all existing COM objects
+    if (_particleTexture) _particleTexture->Release();
+    if (&_entity) _entity.Release();
+    if (_spriteBatch) _spriteBatch.release();
+    if (_spriteFont) _spriteFont.release();
     if (_rasterizerState) _rasterizerState->Release();
     if (_pLayout) _pLayout->Release();
     if (_pVS) _pVS->Release();
     if (_pPS) _pPS->Release();
     if (_particleTexture) _particleTexture->Release();
     if (_samplerState) _samplerState->Release();
-    if (_constantBuffer.GetAddressOf()) _constantBuffer.Release();
-    if (_indexBuffer.GetAddressOf()) _indexBuffer.Release();
-    if (_vertexBuffer.GetAddressOf()) _vertexBuffer.Release();
+    if (_cb_vs_vertexshader.GetAddressOf()) _cb_vs_vertexshader.Release();    
     if (_swapchain) _swapchain->Release();
     if (_backbuffer) _backbuffer->Release();
     if (_dev) _dev->Release();

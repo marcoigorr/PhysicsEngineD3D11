@@ -156,8 +156,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Camera.h" />
     <ClInclude Include="ConstantBuffer.h" />
     <ClInclude Include="ConstantBufferTypes.h" />
+    <ClInclude Include="Entity.h" />
     <ClInclude Include="Graphics.h" />
     <ClInclude Include="Engine.h" />
     <ClInclude Include="ErrorLogger.h" />
@@ -179,6 +181,8 @@
     <ClInclude Include="WindowContainer.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="Entity.cpp" />
     <ClCompile Include="Graphics.cpp" />
     <ClCompile Include="Engine.cpp" />
     <ClCompile Include="ErrorLogger.cpp" />

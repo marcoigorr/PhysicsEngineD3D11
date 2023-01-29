@@ -10,7 +10,8 @@
 #pragma comment (lib, "DirectXTK.lib")
 #pragma comment (lib, "DXGI.lib")
 #pragma comment (lib, "D3DCompiler.lib")
-#include "Vertex.h"
+#include "ConstantBuffer.h"
+#include "ConstantBufferTypes.h"
 #include <SpriteBatch.h>
 #include <SpriteFont.h>
 #include <WICTextureLoader.h>
@@ -18,10 +19,8 @@
 #include "ImGui/imgui.h"
 #include "ImGui/imgui_impl_win32.h"
 #include "ImGui/imgui_impl_dx11.h"
-#include "VertexBuffer.h"
-#include "IndexBuffer.h"
-#include "ConstantBufferTypes.h"
-#include "ConstantBuffer.h"
+#include "Camera.h"
+#include "Entity.h"
 
 class Graphics
 {
@@ -44,9 +43,7 @@ private:
 	ID3D11InputLayout* _pLayout;				// input layout
 	ID3D11RasterizerState* _rasterizerState;
 
-	VertexBuffer<Vertex> _vertexBuffer;
-	IndexBuffer _indexBuffer;
-	ConstantBuffer<CB_VS_vertexshader> _constantBuffer;
+	ConstantBuffer<CB_VS_vertexshader> _cb_vs_vertexshader;
 
 	std::unique_ptr<DirectX::SpriteBatch> _spriteBatch;
 	std::unique_ptr<DirectX::SpriteFont> _spriteFont;
@@ -58,4 +55,7 @@ private:
 
 	int _wWidth;
 	int _wHeight;
+
+	Camera _camera;
+	Entity _entity;
 };
