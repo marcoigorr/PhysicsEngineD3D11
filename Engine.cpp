@@ -26,6 +26,11 @@ bool Engine::ProcessMessages()
 void Engine::Update()
 {
 	float dt = _timer.GetMillisecondElapsed();
+
+	{
+		gfx._entity.AdjustPosition(0.0f, -0.001f * dt, 0.0f);
+	}
+
 	_timer.Restart();
 }
 

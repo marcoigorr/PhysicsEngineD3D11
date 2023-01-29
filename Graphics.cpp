@@ -34,7 +34,7 @@ bool Graphics::InitImGui(HWND hWnd)
 
     ImGui::StyleColorsDark();
     ImGuiStyle& style = ImGui::GetStyle();
-    style.WindowMinSize = ImVec2(200, 100);
+    style.WindowMinSize = ImVec2(550, 200);
     style.WindowTitleAlign = ImVec2(0.50f, 0.50f); // Title
     // style.WindowPadding = ImVec2(20.0f, 20.0f);
     // style.WindowRounding = 9.0f;
@@ -239,7 +239,6 @@ bool Graphics::InitGraphicsD3D11(void)
     if (!_entity.Initialize(_dev, _devcon, _particleTexture, _cb_vs_vertexshader))
         return false;
 
-    _camera.SetPosition(0.0f, 0.0f, -2.0f);
     _camera.SetProjectionValues(90.0f, static_cast<float>(_wWidth) / static_cast<float>(_wHeight), 0.1f, 1000.0f);
 
     return true;
@@ -257,7 +256,13 @@ void Graphics::RenderFrame(void)
     _devcon->VSSetShader(_pVS, 0, 0);
     _devcon->PSSetShader(_pPS, 0, 0);
 
+    static XMFLOAT3 cameraPos = XMFLOAT3(0.0f, 0.0f, -20.0f);
+    static XMFLOAT3 entityPos;
+    static bool isEditing = false;
     {
+        _camera.SetPosition(cameraPos);
+        if (isEditing)
+            _entity.SetPosition(entityPos);
         _entity.Draw(_camera.GetViewMatrix() * _camera.GetProjectionMatrix());
     }
 
@@ -278,10 +283,28 @@ void Graphics::RenderFrame(void)
     ImGui::NewFrame();
 
     {
-        ImGui::SetNextWindowSize(ImVec2(300, 500));
+        // ImGui::SetNextWindowSize(ImVec2(500, 200));
         ImGui::Begin("Window");
         {
+
             ImGui::Text(fpsString.c_str());
+            static float* cam[3] = { &cameraPos.x, &cameraPos.y, &cameraPos.z };
+            ImGui::SliderFloat3("Camera Position (x, y, z)", *cam, -30.0f, 30.0f, "%0.1f");
+            if (ImGui::Button("RESET", { 50.0f,20.0f }))
+            {
+                cameraPos.x = 0.0f;
+                cameraPos.y = 0.0f;
+                cameraPos.z = -20.0f;
+            }
+
+            ImGui::Spacing();
+            
+            ImGui::Checkbox("Enable edit", &isEditing);
+            if (isEditing)
+            {
+                static float* ent[3] = { &entityPos.x, &entityPos.y, &entityPos.z };
+                ImGui::SliderFloat3("Entity Position (x, y, z)", *ent, -10.0f, 10.0f, "%0.1f", 0);
+            }            
 
         } ImGui::End();           
     }

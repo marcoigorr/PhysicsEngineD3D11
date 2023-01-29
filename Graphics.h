@@ -57,5 +57,7 @@ private:
 	int _wHeight;
 
 	Camera _camera;
+	
+public:
 	Entity _entity;
 };

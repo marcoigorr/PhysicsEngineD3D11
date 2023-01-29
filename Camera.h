@@ -17,6 +17,7 @@ public:
 	const XMFLOAT3& GetRotationFloat3() const;
 
 	void SetPosition(const XMVECTOR& pos);
+	void SetPosition(const XMFLOAT3& pos);
 	void SetPosition(float x, float y, float z);
 	void AdjustPosition(const XMVECTOR& pos);
 	void AdjustPosition(float x, float y, float z);
