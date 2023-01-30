@@ -7,25 +7,29 @@
 #pragma comment (lib, "d3d11.lib")
 #pragma comment (lib, "d3dx11.lib")
 #pragma comment (lib, "d3dx10.lib")
+#pragma comment (lib, "DirectXTK.lib")
+#pragma comment (lib, "DXGI.lib")
 #pragma comment (lib, "D3DCompiler.lib")
-#include "Vertex.h"
+#include "ConstantBuffer.h"
+#include "ConstantBufferTypes.h"
+#include <SpriteBatch.h>
+#include <SpriteFont.h>
+#include <WICTextureLoader.h>
 #include "Timer.h"
 #include "ImGui/imgui.h"
 #include "ImGui/imgui_impl_win32.h"
 #include "ImGui/imgui_impl_dx11.h"
-#include "VertexBuffer.h"
-#include "IndexBuffer.h"
-#include "ConstantBufferTypes.h"
-#include "ConstantBuffer.h"
+#include "Camera.h"
+#include "Entity.h"
 
 class Graphics
 {
 public:
 	bool Initialize(HWND hWnd, int width, int height);
-	bool InitD3D11(HWND hWnd, int width, int height);   // sets up and initializes Direct3D
+	bool InitD3D11(HWND hWnd);							// sets up and initializes Direct3D
 	bool InitPipeline(void);							// loads and prepares pipeline
 	bool InitGraphicsD3D11(void);						// creates the shape to render
-	bool InitImGui(HWND hWnd, int width, int height);
+	bool InitImGui(HWND hWnd);
 	void CleanD3D(void);								// closes Direct3D and releases memory
 	void RenderFrame(void);								// renders a single frame
 
@@ -39,9 +43,21 @@ private:
 	ID3D11InputLayout* _pLayout;				// input layout
 	ID3D11RasterizerState* _rasterizerState;
 
-	VertexBuffer<Vertex> _vertexBuffer;
-	IndexBuffer _indexBuffer;
-	ConstantBuffer<CB_VS_vertexshader> _constantBuffer;
+	ConstantBuffer<CB_VS_vertexshader> _cb_vs_vertexshader;
+
+	std::unique_ptr<DirectX::SpriteBatch> _spriteBatch;
+	std::unique_ptr<DirectX::SpriteFont> _spriteFont;
+
+	ID3D11SamplerState* _samplerState;
+	ID3D11ShaderResourceView* _particleTexture;
 
 	Timer _fpsTimer;
+
+	int _wWidth;
+	int _wHeight;
+
+	Camera _camera;
+	
+public:
+	Entity _entity;
 };

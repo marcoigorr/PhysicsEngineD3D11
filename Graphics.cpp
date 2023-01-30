@@ -2,9 +2,12 @@
 
 bool Graphics::Initialize(HWND hWnd, int width, int height)
 {
-    _fpsTimer.Start();
+    _wWidth = width;
+    _wHeight = height;
 
-    if (!this->InitD3D11(hWnd, width, height))
+    _fpsTimer.Start();
+    
+    if (!this->InitD3D11(hWnd))
         return false;
 
     if (!this->InitPipeline())
@@ -13,13 +16,13 @@ bool Graphics::Initialize(HWND hWnd, int width, int height)
     if (!this->InitGraphicsD3D11())
         return false;
 
-    if (!this->InitImGui(hWnd, width, height))
+    if (!this->InitImGui(hWnd))
         return false;
 
     return true;
 }
 
-bool Graphics::InitImGui(HWND hWnd, int width, int height)
+bool Graphics::InitImGui(HWND hWnd)
 {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -31,7 +34,7 @@ bool Graphics::InitImGui(HWND hWnd, int width, int height)
 
     ImGui::StyleColorsDark();
     ImGuiStyle& style = ImGui::GetStyle();
-    style.WindowMinSize = ImVec2(200, 100);
+    style.WindowMinSize = ImVec2(550, 200);
     style.WindowTitleAlign = ImVec2(0.50f, 0.50f); // Title
     // style.WindowPadding = ImVec2(20.0f, 20.0f);
     // style.WindowRounding = 9.0f;
@@ -59,7 +62,7 @@ bool Graphics::InitImGui(HWND hWnd, int width, int height)
     return true;
 }
 
-bool Graphics::InitD3D11(HWND hWnd, int width, int height)
+bool Graphics::InitD3D11(HWND hWnd)
 {
     // Struct hold information about swap chain
     DXGI_SWAP_CHAIN_DESC scd;
@@ -74,8 +77,8 @@ bool Graphics::InitD3D11(HWND hWnd, int width, int height)
     scd.OutputWindow = hWnd;                                // the window to be used
     scd.SampleDesc.Count = 8;                               // MSAA (Anti-Alias)
     scd.Windowed = TRUE;                                    // windowed/full-screen mode
-    scd.BufferDesc.Width = width;
-    scd.BufferDesc.Height = height;
+    scd.BufferDesc.Width = _wWidth;
+    scd.BufferDesc.Height = _wHeight;
     scd.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;     // allow full-screen switching
 
     HRESULT hr;   
@@ -119,25 +122,44 @@ bool Graphics::InitD3D11(HWND hWnd, int width, int height)
     // Set viewport
     D3D11_VIEWPORT viewport;
     ZeroMemory(&viewport, sizeof(D3D11_VIEWPORT));
-
     viewport.TopLeftX = 0;
     viewport.TopLeftY = 0;
-    viewport.Width = width;
-    viewport.Height = height;
+    viewport.Width = _wWidth;
+    viewport.Height = _wHeight;
 
     _devcon->RSSetViewports(1, &viewport);
 
     // Create rasterizer state
     D3D11_RASTERIZER_DESC rd;
     ZeroMemory(&rd, sizeof(D3D11_RASTERIZER_DESC));
-
     rd.FillMode = D3D11_FILL_MODE::D3D11_FILL_SOLID;
-    rd.CullMode = D3D11_CULL_MODE::D3D11_CULL_NONE;
+    rd.CullMode = D3D11_CULL_MODE::D3D11_CULL_BACK;
     hr = _dev->CreateRasterizerState(&rd, &_rasterizerState);
     if (FAILED(hr))
     {
         ErrorLogger::Log(hr, "Failed to create rasterizer state.");
         return false;
+    }
+
+    _spriteBatch = std::make_unique<DirectX::SpriteBatch>(_devcon);
+    _spriteFont = std::make_unique<DirectX::SpriteFont>(_dev, L"Data\\Fonts\\arial_14.spritefont");
+
+    // Texture
+    D3D11_SAMPLER_DESC sd;
+    ZeroMemory(&sd, sizeof(D3D11_SAMPLER_DESC));
+    sd.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+    sd.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;  // x coord on texture
+    sd.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;  // y
+    sd.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;  // for 3d textures
+    sd.ComparisonFunc = D3D11_COMPARISON_NEVER;
+    sd.MinLOD = 0;  // Level of detail
+    sd.MaxLOD = D3D11_FLOAT32_MAX;
+    
+    hr = _dev->CreateSamplerState(&sd, &_samplerState);
+    if (FAILED(hr))
+    {
+        ErrorLogger::Log(hr, "Failed to create sampler state.");
+        return false; 
     }
 
     return true;
@@ -182,7 +204,7 @@ bool Graphics::InitPipeline(void)
     D3D11_INPUT_ELEMENT_DESC ied[] =
     {
         {"POSITION", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0  },
-		{"COLOR", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0  },
+		{"TEXCOORD", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0  },
     };
 
     hr = _dev->CreateInputLayout(ied, ARRAYSIZE(ied), VS->GetBufferPointer(), VS->GetBufferSize(), &_pLayout);
@@ -197,41 +219,27 @@ bool Graphics::InitPipeline(void)
 
 bool Graphics::InitGraphicsD3D11(void)
 {
-    // create a square using the VERTEX struct
-    Vertex v[] =
-    {
-        {-0.3f, 0.5f, 1.0f, 0.0f, 0.0f},    // top left [0]
-        {0.3f, 0.5f, 0.0f, 1.0f, 0.0f},     // top right [1]
-        {-0.3f, -0.5f, 0.0f, 0.0f, 1.0f},   // bottom left [2]
-        {0.3f, -0.5f, 1.0f, 1.0f, 1.0f},    // bottom right [3]
-    };
+    HRESULT hr;     
 
-    HRESULT hr;
-    hr = _vertexBuffer.Initialize(_dev, v, ARRAYSIZE(v));     // create the buffer
-    if (FAILED(hr))
-    {
-        ErrorLogger::Log(hr, "Failed to create vertex buffer.");
-        return false;
-    }
-
-    DWORD indices[] =
-    {
-        0,1,2,3
-    };
-
-    hr = _indexBuffer.Initialize(_dev, indices, ARRAYSIZE(indices));
-    if (FAILED(hr))
-    {
-        ErrorLogger::Log(hr, "Failed to create index buffer.");
-        return false;
-    }
-
-    hr = _constantBuffer.Initialize(_dev, _devcon);
+    hr = _cb_vs_vertexshader.Initialize(_dev, _devcon);
     if (FAILED(hr))
     {
         ErrorLogger::Log(hr, "Failed to create constant buffer.");
         return false;
+    } 
+
+    hr = DirectX::CreateWICTextureFromFile(_dev, _devcon, L"Data\\Textures\\particle.png", nullptr, &_particleTexture);
+    if (FAILED(hr))
+    {
+        ErrorLogger::Log(hr, "Failed to create wic texture from file.");
+        return false;
     }
+
+    // Initialize Entity
+    if (!_entity.Initialize(_dev, _devcon, _particleTexture, _cb_vs_vertexshader))
+        return false;
+
+    _camera.SetProjectionValues(90.0f, static_cast<float>(_wWidth) / static_cast<float>(_wHeight), 0.1f, 1000.0f);
 
     return true;
 }
@@ -241,61 +249,81 @@ void Graphics::RenderFrame(void)
     // Clear the back buffer to a color
     _devcon->ClearRenderTargetView(_backbuffer, D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f));
 
+    _devcon->IASetInputLayout(_pLayout);
+    _devcon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    _devcon->RSSetState(_rasterizerState);
+    _devcon->PSSetSamplers(0, 1, &_samplerState);
+    _devcon->VSSetShader(_pVS, 0, 0);
+    _devcon->PSSetShader(_pPS, 0, 0);
+
+    static XMFLOAT3 cameraPos = XMFLOAT3(0.0f, 0.0f, -20.0f);
+    static XMFLOAT3 entityPos;
+    static bool isEditing = false;
     {
-        _devcon->IASetInputLayout(_pLayout);
-        _devcon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-        _devcon->RSSetState(_rasterizerState);
-
-        _devcon->VSSetShader(_pVS, 0, 0);
-        _devcon->PSSetShader(_pPS, 0, 0);
-
-        UINT offset = 0;
-
-        // Update constant buffer
-        static float xOffset = 0.0f;
-        static float yOffset = 0.0f;
-        _constantBuffer._data.xOffset = xOffset;
-        _constantBuffer._data.yOffset = yOffset;
-        if (!_constantBuffer.ApplyChanges())
-            return;
-        _devcon->VSSetConstantBuffers(0, 1, _constantBuffer.GetAddressOf());
-
-        // Square
-        _devcon->IASetVertexBuffers(0, 1, _vertexBuffer.GetAddressOf(), _vertexBuffer.StridePtr(), &offset);
-        _devcon->IASetIndexBuffer(_indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
-
-        // Draw the vertex buffer to the back buffer
-        _devcon->DrawIndexed(_indexBuffer.BufferSize(), 0, 0);    // draw x verticies, starting from vertex 0
-
-        static int fpsCount = 0;
-        static std::string fpsString = "FPS: 0";
-        fpsCount += 1;
-        if (_fpsTimer.GetMillisecondElapsed() > 1000.0f)
-        {
-            fpsString = "FPS: " + std::to_string(fpsCount);
-            fpsCount = 0;
-            _fpsTimer.Restart();
-        }
-
-        // Start ImGui frame
-        ImGui_ImplDX11_NewFrame();
-        ImGui_ImplWin32_NewFrame();
-        ImGui::NewFrame();
-
-        {
-            ImGui::SetNextWindowSize(ImVec2(300, 500));
-            ImGui::Begin("Window");
-            {
-                ImGui::Text(fpsString.c_str());
-                ImGui::SliderFloat("xOffset", &xOffset, -1.0f, 1.0f, "%.1f", 0);
-                ImGui::SliderFloat("yOffset", &yOffset, -1.0f, 1.0f, "%.1f", 0);
-
-            } ImGui::End();           
-        }
-
-        ImGui::Render();
-        ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+        _camera.SetPosition(cameraPos);
+        if (isEditing)
+            _entity.SetPosition(entityPos);
+        _entity.Draw(_camera.GetViewMatrix() * _camera.GetProjectionMatrix());
     }
+    entityPos = _entity.GetPositionFloat3();
+
+    // Text / fps
+    static int fpsCount = 0;
+    static std::string fpsString = "FPS: 0";
+    fpsCount += 1;
+    if (_fpsTimer.GetMillisecondElapsed() > 1000.0f)
+    {
+        fpsString = "FPS: " + std::to_string(fpsCount);
+        fpsCount = 0;
+        _fpsTimer.Restart();
+    }
+
+    // Start ImGui frame
+    ImGui_ImplDX11_NewFrame();
+    ImGui_ImplWin32_NewFrame();
+    ImGui::NewFrame();
+
+    {
+        // ImGui::SetNextWindowSize(ImVec2(500, 200));
+        ImGui::Begin("Window");
+        {
+
+            ImGui::Text(fpsString.c_str());
+            static float* cam[3] = { &cameraPos.x, &cameraPos.y, &cameraPos.z };
+            ImGui::SliderFloat3("Camera Position (x, y, z)", *cam, -30.0f, 30.0f, "%0.1f");
+            if (ImGui::Button("RESET CAMERA", { 100.0f,20.0f }))
+            {
+                cameraPos.x = 0.0f;
+                cameraPos.y = 0.0f;
+                cameraPos.z = -20.0f;
+            }
+
+            ImGui::Spacing();
+            
+            ImGui::Checkbox("Enable edit", &isEditing);
+            if (isEditing)
+            {
+                static float* ent[3] = { &entityPos.x, &entityPos.y, &entityPos.z };
+                ImGui::SliderFloat3("Entity Position (x, y, z)", *ent, -10.0f, 10.0f, "%0.1f", 0);
+                if (ImGui::Button("RESET ENT", { 70.0f,20.0f }))
+                {
+                    entityPos.x = 0.0f;
+                    entityPos.y = 0.0f;
+                    entityPos.z = 0.0f;
+                }
+            }           
+
+        } ImGui::End();           
+    }
+
+    ImGui::Render();
+    ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+
+    // Font Render
+    _spriteBatch->Begin();
+    _spriteFont->DrawString(_spriteBatch.get(), fpsString.c_str(), DirectX::XMFLOAT2(0, 0), DirectX::Colors::White, 0.0f, DirectX::XMFLOAT2(0.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 1.0f));
+    _spriteBatch->End();
+
     // Switch back buffer and front buffer
     _swapchain->Present(0, 0); // 1 for VSync
 }
@@ -305,13 +333,17 @@ void Graphics::CleanD3D(void)
     _swapchain->SetFullscreenState(FALSE, NULL);    // switch to windowed mode
 
     // close and release all existing COM objects
+    if (_particleTexture) _particleTexture->Release();
+    if (&_entity) _entity.Release();
+    if (_spriteBatch) _spriteBatch.release();
+    if (_spriteFont) _spriteFont.release();
     if (_rasterizerState) _rasterizerState->Release();
     if (_pLayout) _pLayout->Release();
     if (_pVS) _pVS->Release();
     if (_pPS) _pPS->Release();
-    if (_constantBuffer.GetAddressOf()) _constantBuffer.Release();
-    if (_indexBuffer.GetAddressOf()) _indexBuffer.Release();
-    if (_vertexBuffer.GetAddressOf()) _vertexBuffer.Release();
+    if (_particleTexture) _particleTexture->Release();
+    if (_samplerState) _samplerState->Release();
+    if (_cb_vs_vertexshader.GetAddressOf()) _cb_vs_vertexshader.Release();    
     if (_swapchain) _swapchain->Release();
     if (_backbuffer) _backbuffer->Release();
     if (_dev) _dev->Release();
