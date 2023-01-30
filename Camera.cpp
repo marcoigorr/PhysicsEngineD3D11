@@ -2,7 +2,7 @@
 
 Camera::Camera()
 {
-	_pos = XMFLOAT3(0.0f, 0.0f, -20.0f);
+	_pos = XMFLOAT3(0.0f, 0.0f, -50.0f);
 	_posVector = XMLoadFloat3(&_pos);
 	_rot = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	_rotVector = XMLoadFloat3(&_rot);

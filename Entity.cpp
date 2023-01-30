@@ -10,13 +10,13 @@ bool Entity::Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceContext
     // create a square using the VERTEX struct
     Vertex v[] =
     {
-        Vertex(-0.5f, -0.5f, 0.0f,  0.0f, 1.0f),  // Bottom Left
-        Vertex(-0.5f,  0.5f, 0.0f,  0.0f, 0.0f),  // Top Left
-        Vertex(0.5f,  0.5f, 0.0f,  1.0f, 0.0f),  // Top Right
+        Vertex(-1.5f, -1.5f, 0.0f,  0.0f, 1.0f),  // Bottom Left
+        Vertex(-1.5f,  1.5f, 0.0f,  0.0f, 0.0f),  // Top Left
+        Vertex(1.5f,  1.5f, 0.0f,  1.0f, 0.0f),  // Top Right
 
-        Vertex(-0.5f, -0.5f, 0.0f,  0.0f, 1.0f),  // Bottom Left
-        Vertex(0.5f,  0.5f, 0.0f,  1.0f, 0.0f),  // Top Right
-        Vertex(0.5f, -0.5f, 0.0f,  1.0f, 1.0f),  // Bottom Right
+        Vertex(-1.5f, -1.5f, 0.0f,  0.0f, 1.0f),  // Bottom Left
+        Vertex(1.5f,  1.5f, 0.0f,  1.0f, 0.0f),  // Top Right
+        Vertex(1.5f, -1.5f, 0.0f,  1.0f, 1.0f),  // Bottom Right
     };
 
     HRESULT hr;

@@ -290,12 +290,12 @@ void Graphics::RenderFrame(void)
 
             ImGui::Text(fpsString.c_str());
             static float* cam[3] = { &cameraPos.x, &cameraPos.y, &cameraPos.z };
-            ImGui::SliderFloat3("Camera Position (x, y, z)", *cam, -30.0f, 30.0f, "%0.1f");
+            ImGui::SliderFloat3("Camera Position (x, y, z)", *cam, -50.0f, 30.0f, "%0.1f");
             if (ImGui::Button("RESET CAMERA", { 100.0f,20.0f }))
             {
                 cameraPos.x = 0.0f;
                 cameraPos.y = 0.0f;
-                cameraPos.z = -20.0f;
+                cameraPos.z = -50.0f;
             }
 
             ImGui::Spacing();
