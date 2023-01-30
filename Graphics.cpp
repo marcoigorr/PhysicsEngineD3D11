@@ -265,6 +265,7 @@ void Graphics::RenderFrame(void)
             _entity.SetPosition(entityPos);
         _entity.Draw(_camera.GetViewMatrix() * _camera.GetProjectionMatrix());
     }
+    entityPos = _entity.GetPositionFloat3();
 
     // Text / fps
     static int fpsCount = 0;
@@ -290,7 +291,7 @@ void Graphics::RenderFrame(void)
             ImGui::Text(fpsString.c_str());
             static float* cam[3] = { &cameraPos.x, &cameraPos.y, &cameraPos.z };
             ImGui::SliderFloat3("Camera Position (x, y, z)", *cam, -30.0f, 30.0f, "%0.1f");
-            if (ImGui::Button("RESET", { 50.0f,20.0f }))
+            if (ImGui::Button("RESET CAMERA", { 100.0f,20.0f }))
             {
                 cameraPos.x = 0.0f;
                 cameraPos.y = 0.0f;
@@ -304,7 +305,13 @@ void Graphics::RenderFrame(void)
             {
                 static float* ent[3] = { &entityPos.x, &entityPos.y, &entityPos.z };
                 ImGui::SliderFloat3("Entity Position (x, y, z)", *ent, -10.0f, 10.0f, "%0.1f", 0);
-            }            
+                if (ImGui::Button("RESET ENT", { 70.0f,20.0f }))
+                {
+                    entityPos.x = 0.0f;
+                    entityPos.y = 0.0f;
+                    entityPos.z = 0.0f;
+                }
+            }           
 
         } ImGui::End();           
     }
