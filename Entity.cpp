@@ -39,7 +39,7 @@ bool Entity::Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceContext
         return false;
     } 
 
-    this->SetPosition(0.0f, 0.0f, 0.0f);
+    this->SetPosition(0.0f, 0.0f, 100.0f);
 	this->UpdateWorldMatrix();
 	return true;
 }

@@ -256,8 +256,8 @@ void Graphics::RenderFrame(void)
     _devcon->VSSetShader(_pVS, 0, 0);
     _devcon->PSSetShader(_pPS, 0, 0);
 
-    static XMFLOAT3 cameraPos = XMFLOAT3(0.0f, 0.0f, -20.0f);
-    static XMFLOAT3 entityPos;
+    static XMFLOAT3 cameraPos = XMFLOAT3(0.0f, 0.0f, 0.0f);
+    static XMFLOAT3 entityPos = XMFLOAT3(0.0f, 0.0f, 100.0f);
     static bool isEditing = false;
     {
         _camera.SetPosition(cameraPos);
@@ -287,15 +287,14 @@ void Graphics::RenderFrame(void)
         // ImGui::SetNextWindowSize(ImVec2(500, 200));
         ImGui::Begin("Window");
         {
-
             ImGui::Text(fpsString.c_str());
             static float* cam[3] = { &cameraPos.x, &cameraPos.y, &cameraPos.z };
-            ImGui::SliderFloat3("Camera Position (x, y, z)", *cam, -50.0f, 30.0f, "%0.1f");
+            ImGui::SliderFloat3("Camera Position (x, y, z)", *cam, -100.0f, 100.0f, "%0.1f");
             if (ImGui::Button("RESET CAMERA", { 100.0f,20.0f }))
             {
                 cameraPos.x = 0.0f;
                 cameraPos.y = 0.0f;
-                cameraPos.z = -50.0f;
+                cameraPos.z = 0.0f;
             }
 
             ImGui::Spacing();
@@ -304,12 +303,12 @@ void Graphics::RenderFrame(void)
             if (isEditing)
             {
                 static float* ent[3] = { &entityPos.x, &entityPos.y, &entityPos.z };
-                ImGui::SliderFloat3("Entity Position (x, y, z)", *ent, -10.0f, 10.0f, "%0.1f", 0);
+                ImGui::SliderFloat3("Entity Position (x, y, z)", *ent, -100.0f, 100.0f, "%0.1f", 0);
                 if (ImGui::Button("RESET ENT", { 70.0f,20.0f }))
                 {
                     entityPos.x = 0.0f;
                     entityPos.y = 0.0f;
-                    entityPos.z = 0.0f;
+                    entityPos.z = 100.0f;
                 }
             }           
 

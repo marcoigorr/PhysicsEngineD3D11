@@ -56,8 +56,7 @@ private:
 	int _wWidth;
 	int _wHeight;
 
-	Camera _camera;
-	
 public:
+	Camera _camera;
 	Entity _entity;
 };
