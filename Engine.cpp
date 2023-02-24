@@ -27,22 +27,6 @@ void Engine::Update()
 {
 	float dt = _timer.GetMillisecondElapsed();
 
-	{
-		Entity* entRef = &gfx._entity;
-		Camera* camRef = &gfx._camera;
-		DirectX::XMFLOAT3 entPos = entRef->GetPositionFloat3();
-		DirectX::XMFLOAT3 cameraPos = camRef->GetPositionFloat3();
-
-		float vx = 0.0f;
-		float vy = -0.015f;
-
-		if (entPos.y * -1 >= entPos.z)
-			vy *= -1;
-			entRef->AdjustPosition(vx, vy * dt, 0.0f);
-
-		entRef->AdjustPosition(vx, vy * dt, 0.0f);	
-	}
-
 	_timer.Restart();
 }
 
