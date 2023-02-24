@@ -58,5 +58,5 @@ private:
 
 public:
 	Camera _camera;
-	Entity _entity;
+	Entity _entity[2];
 };

@@ -7,6 +7,16 @@ bool Entity::Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceContext
 	_texture = texture;
 	_cb_vs_vertexshader = &cb_vs_vertexbuffer;
 
+    ID3D11Resource* colorTex;
+    _texture->GetResource(&colorTex);
+
+    D3D11_TEXTURE2D_DESC colorTexDesc;
+    ((ID3D11Texture2D*)colorTex)->GetDesc(&colorTexDesc);
+    colorTex->Release();
+
+    float halfWidth = (float)colorTexDesc.Width / 2.0f;
+    float halfHeight = (float)colorTexDesc.Height / 2.0f;
+
     // create a square using the VERTEX struct
     Vertex v[] =
     {

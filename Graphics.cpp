@@ -236,8 +236,13 @@ bool Graphics::InitGraphicsD3D11(void)
     }
 
     // Initialize Entity
-    if (!_entity.Initialize(_dev, _devcon, _particleTexture, _cb_vs_vertexshader))
+    if (!_entity[0].Initialize(_dev, _devcon, _particleTexture, _cb_vs_vertexshader))
         return false;
+
+    if (!_entity[1].Initialize(_dev, _devcon, _particleTexture, _cb_vs_vertexshader))
+        return false;
+
+    _entity[1].SetPosition(20.0f, 20.0f, 100.0f);
 
     _camera.SetProjectionValues(90.0f, static_cast<float>(_wWidth) / static_cast<float>(_wHeight), 0.1f, 1000.0f);
 
@@ -257,16 +262,21 @@ void Graphics::RenderFrame(void)
     _devcon->PSSetShader(_pPS, 0, 0);
 
     static XMFLOAT3 cameraPos = XMFLOAT3(0.0f, 0.0f, 0.0f);
-    static XMFLOAT3 entityPos = XMFLOAT3(0.0f, 0.0f, 100.0f);
+    static XMFLOAT3 entityPos = XMFLOAT3(0.0f, 0.0f, 100.0f); // second entity, the first one is static
     static bool isEditing = false;
     {
         _camera.SetPosition(cameraPos);
-        if (isEditing)
-            _entity.SetPosition(entityPos);
-        _entity.Draw(_camera.GetViewMatrix() * _camera.GetProjectionMatrix());
-    }
-    entityPos = _entity.GetPositionFloat3();
 
+        for (int i = 0; i < ARRAYSIZE(_entity); i++)
+        {
+            if (isEditing)
+                _entity[1].SetPosition(entityPos);
+            _entity[i].Draw(_camera.GetViewMatrix() * _camera.GetProjectionMatrix());
+
+            entityPos = _entity[1].GetPositionFloat3();
+        }        
+    }
+   
     // Text / fps
     static int fpsCount = 0;
     static std::string fpsString = "FPS: 0";
@@ -304,10 +314,10 @@ void Graphics::RenderFrame(void)
             {
                 static float* ent[3] = { &entityPos.x, &entityPos.y, &entityPos.z };
                 ImGui::SliderFloat3("Entity Position (x, y, z)", *ent, -100.0f, 100.0f, "%0.1f", 0);
-                if (ImGui::Button("RESET ENT", { 70.0f,20.0f }))
+                if (ImGui::Button("RESET ENTITY", { 100.0f,20.0f }))
                 {
                     entityPos.x = 0.0f;
-                    entityPos.y = 0.0f;
+                    entityPos.y = 20.0f;
                     entityPos.z = 100.0f;
                 }
             }           
@@ -333,7 +343,8 @@ void Graphics::CleanD3D(void)
 
     // close and release all existing COM objects
     if (_particleTexture) _particleTexture->Release();
-    if (&_entity) _entity.Release();
+    if (&_entity[0]) _entity[0].Release();
+    if (&_entity[1]) _entity[1].Release();
     if (_spriteBatch) _spriteBatch.release();
     if (_spriteFont) _spriteFont.release();
     if (_rasterizerState) _rasterizerState->Release();
