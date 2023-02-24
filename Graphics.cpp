@@ -203,7 +203,7 @@ bool Graphics::InitPipeline(void)
     // Creating input layout to let gpu organize data properly
     D3D11_INPUT_ELEMENT_DESC ied[] =
     {
-        {"POSITION", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0  },
+        {"POSITION", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0  },
 		{"TEXCOORD", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0  },
     };
 
@@ -228,10 +228,10 @@ bool Graphics::InitGraphicsD3D11(void)
         return false;
     } 
 
-    hr = DirectX::CreateWICTextureFromFile(_dev, _devcon, L"Data\\Textures\\particle.png", nullptr, &_particleTexture);
+    hr = D3DX11CreateShaderResourceViewFromFile(_dev, L"Data\\Textures\\circle_05.png", NULL, NULL, &_particleTexture, NULL);
     if (FAILED(hr))
     {
-        ErrorLogger::Log(hr, "Failed to create wic texture from file.");
+        ErrorLogger::Log(hr, "Failed to create texture from file.");
         return false;
     }
 
@@ -340,7 +340,6 @@ void Graphics::CleanD3D(void)
     if (_pLayout) _pLayout->Release();
     if (_pVS) _pVS->Release();
     if (_pPS) _pPS->Release();
-    if (_particleTexture) _particleTexture->Release();
     if (_samplerState) _samplerState->Release();
     if (_cb_vs_vertexshader.GetAddressOf()) _cb_vs_vertexshader.Release();    
     if (_swapchain) _swapchain->Release();
