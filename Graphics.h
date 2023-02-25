@@ -43,6 +43,10 @@ private:
 	ID3D11InputLayout* _pLayout;				// input layout
 	ID3D11RasterizerState* _rasterizerState;
 
+	ID3D11Texture2D* _depthStencilBuffer;
+	ID3D11DepthStencilView* _depthStencilView;
+	ID3D11DepthStencilState* _depthStencilState;
+
 	ConstantBuffer<CB_VS_vertexshader> _cb_vs_vertexshader;
 
 	std::unique_ptr<DirectX::SpriteBatch> _spriteBatch;

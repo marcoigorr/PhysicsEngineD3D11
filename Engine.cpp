@@ -31,7 +31,7 @@ void Engine::Update()
 	Entity* gravitySource = &gfx._entity[0];
 	Entity* particle = &gfx._entity[1];
 
-	float gravityStrength = -0.01f;
+	float gravityStrength = -0.015f;
 
 	XMVECTOR gravitySourceVec = gravitySource->GetPositionVector();
 	XMFLOAT3 gravitySourceFloat3 = gravitySource->GetPositionFloat3();

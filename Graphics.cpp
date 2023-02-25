@@ -76,10 +76,14 @@ bool Graphics::InitD3D11(HWND hWnd)
     scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;      // how swap chain is to be used
     scd.OutputWindow = hWnd;                                // the window to be used
     scd.SampleDesc.Count = 8;                               // MSAA (Anti-Alias)
+    scd.SampleDesc.Quality = 0;
     scd.Windowed = TRUE;                                    // windowed/full-screen mode
     scd.BufferDesc.Width = _wWidth;
     scd.BufferDesc.Height = _wHeight;
     scd.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;     // allow full-screen switching
+    scd.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
+    scd.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
+    scd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 
     HRESULT hr;   
     
@@ -116,8 +120,51 @@ bool Graphics::InitD3D11(HWND hWnd)
         return false;
     }
 
+    // Depth Stencil buffer
+    D3D11_TEXTURE2D_DESC dsd;
+    ZeroMemory(&dsd, sizeof(D3D11_TEXTURE2D_DESC));
+    dsd.Width = _wWidth;
+    dsd.Height = _wHeight;
+    dsd.MipLevels = 1;
+    dsd.ArraySize = 1;
+    dsd.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+    dsd.SampleDesc.Count = 8;
+    dsd.SampleDesc.Quality = 0;
+    dsd.Usage = D3D11_USAGE_DEFAULT;
+    dsd.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+    dsd.CPUAccessFlags = 0;
+    dsd.MiscFlags = 0;
+
+    hr = _dev->CreateTexture2D(&dsd, NULL, &_depthStencilBuffer);
+    if (FAILED(hr))
+    {
+        ErrorLogger::Log(hr, "Failed to create depth stencil buffer.");
+        return false;
+    }
+
+    hr = _dev->CreateDepthStencilView(_depthStencilBuffer, NULL, &_depthStencilView);
+    if (FAILED(hr))
+    {
+        ErrorLogger::Log(hr, "Failed to create depth stencil view.");
+        return false;
+    }
+
     // Set render target as the back buffer
-    _devcon->OMSetRenderTargets(1, &_backbuffer, NULL);
+    _devcon->OMSetRenderTargets(1, &_backbuffer, _depthStencilView);
+
+    // Create depth stencil state
+    D3D11_DEPTH_STENCIL_DESC dsdesc;
+    ZeroMemory(&dsdesc, sizeof(D3D11_DEPTH_STENCIL_DESC));
+    dsdesc.DepthEnable = true;
+    dsdesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+    dsdesc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
+
+    hr = _dev->CreateDepthStencilState(&dsdesc, &_depthStencilState);
+    if (FAILED(hr))
+    {
+        ErrorLogger::Log(hr, "Failed to create depth stencil state.");
+        return false;
+    }
 
     // Set viewport
     D3D11_VIEWPORT viewport;
@@ -126,6 +173,8 @@ bool Graphics::InitD3D11(HWND hWnd)
     viewport.TopLeftY = 0;
     viewport.Width = _wWidth;
     viewport.Height = _wHeight;
+    viewport.MinDepth = 0.0f;
+    viewport.MaxDepth = 1.0f;
 
     _devcon->RSSetViewports(1, &viewport);
 
@@ -235,7 +284,7 @@ bool Graphics::InitGraphicsD3D11(void)
         return false;
     }
 
-    // Initialize Entity
+    // Initialize Entities
     if (!_entity[0].Initialize(_dev, _devcon, _particleTexture, _cb_vs_vertexshader))
         return false;
 
@@ -254,13 +303,18 @@ void Graphics::RenderFrame(void)
     // Clear the back buffer to a color
     _devcon->ClearRenderTargetView(_backbuffer, D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f));
 
+    // Refresh depth stencil view
+    _devcon->ClearDepthStencilView(_depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+
     _devcon->IASetInputLayout(_pLayout);
     _devcon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     _devcon->RSSetState(_rasterizerState);
+    _devcon->OMSetDepthStencilState(_depthStencilState, 0);
     _devcon->PSSetSamplers(0, 1, &_samplerState);
     _devcon->VSSetShader(_pVS, 0, 0);
     _devcon->PSSetShader(_pPS, 0, 0);
 
+    // Entity draw and manipulation
     static XMFLOAT3 cameraPos = XMFLOAT3(0.0f, 0.0f, 0.0f);
     static XMFLOAT3 entityPos = XMFLOAT3(0.0f, 0.0f, 100.0f); // second entity, the first one is static
     static bool isEditing = false;
@@ -347,6 +401,9 @@ void Graphics::CleanD3D(void)
     if (&_entity[1]) _entity[1].Release();
     if (_spriteBatch) _spriteBatch.release();
     if (_spriteFont) _spriteFont.release();
+    if (_depthStencilState) _depthStencilState->Release();
+    if (_depthStencilView) _depthStencilView->Release();
+    if (_depthStencilBuffer) _depthStencilBuffer->Release();
     if (_rasterizerState) _rasterizerState->Release();
     if (_pLayout) _pLayout->Release();
     if (_pVS) _pVS->Release();
