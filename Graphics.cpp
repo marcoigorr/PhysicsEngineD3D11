@@ -181,8 +181,12 @@ bool Graphics::InitD3D11(HWND hWnd)
     // Create rasterizer state
     D3D11_RASTERIZER_DESC rd;
     ZeroMemory(&rd, sizeof(D3D11_RASTERIZER_DESC));
+    rd.AntialiasedLineEnable = true;
+    rd.MultisampleEnable = true;
     rd.FillMode = D3D11_FILL_MODE::D3D11_FILL_SOLID;
-    rd.CullMode = D3D11_CULL_MODE::D3D11_CULL_BACK;
+    rd.CullMode = D3D11_CULL_MODE::D3D11_CULL_NONE;
+    rd.FrontCounterClockwise = true;
+
     hr = _dev->CreateRasterizerState(&rd, &_rasterizerState);
     if (FAILED(hr))
     {
@@ -197,13 +201,13 @@ bool Graphics::InitD3D11(HWND hWnd)
     D3D11_RENDER_TARGET_BLEND_DESC rtbd;
     ZeroMemory(&rtbd, sizeof(D3D11_RENDER_TARGET_BLEND_DESC));
     rtbd.BlendEnable = true;
-    rtbd.SrcBlend = D3D11_BLEND_SRC_COLOR;
-    rtbd.DestBlend = D3D11_BLEND_BLEND_FACTOR;
+    rtbd.SrcBlend = D3D11_BLEND_SRC_ALPHA;
+    rtbd.DestBlend = D3D11_BLEND_INV_SRC_ALPHA; 
     rtbd.BlendOp = D3D11_BLEND_OP_ADD;
-    rtbd.SrcBlendAlpha = D3D11_BLEND_ONE;
+    rtbd.SrcBlendAlpha = D3D11_BLEND_ZERO;
     rtbd.DestBlendAlpha = D3D11_BLEND_ZERO;
     rtbd.BlendOpAlpha = D3D11_BLEND_OP_ADD;
-    rtbd.RenderTargetWriteMask = D3D10_COLOR_WRITE_ENABLE_ALL;
+    rtbd.RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 
     blendDesc.AlphaToCoverageEnable = false;
     blendDesc.RenderTarget[0] = rtbd;
@@ -214,7 +218,6 @@ bool Graphics::InitD3D11(HWND hWnd)
         ErrorLogger::Log(hr, "Failed to create blend state.");
         return false;
     }
-
 
     _spriteBatch = std::make_unique<DirectX::SpriteBatch>(_devcon);
     _spriteFont = std::make_unique<DirectX::SpriteFont>(_dev, L"Data\\Fonts\\arial_14.spritefont");
@@ -342,12 +345,12 @@ void Graphics::RenderFrame(void)
     _devcon->ClearDepthStencilView(_depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
     float blendFactor[] = { 0.75f, 0.75f, 0.75f, 1.0f };
+    _devcon->OMSetBlendState(_blendState, blendFactor, 0xFFFFFFFF);
 
     _devcon->IASetInputLayout(_pLayout);
     _devcon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     _devcon->RSSetState(_rasterizerState);
     _devcon->OMSetDepthStencilState(_depthStencilState, 0);
-    _devcon->OMSetBlendState(_blendState, blendFactor, 0xFFFFFFFF);
     _devcon->PSSetSamplers(0, 1, &_samplerState);
     _devcon->VSSetShader(_pVS, 0, 0);
     _devcon->PSSetShader(_pPS, 0, 0);
