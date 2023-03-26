@@ -190,6 +190,32 @@ bool Graphics::InitD3D11(HWND hWnd)
         return false;
     }
 
+    // Create blend state
+    D3D11_BLEND_DESC blendDesc;
+    ZeroMemory(&blendDesc, sizeof(D3D11_BLEND_DESC));
+
+    D3D11_RENDER_TARGET_BLEND_DESC rtbd;
+    ZeroMemory(&rtbd, sizeof(D3D11_RENDER_TARGET_BLEND_DESC));
+    rtbd.BlendEnable = true;
+    rtbd.SrcBlend = D3D11_BLEND_SRC_COLOR;
+    rtbd.DestBlend = D3D11_BLEND_BLEND_FACTOR;
+    rtbd.BlendOp = D3D11_BLEND_OP_ADD;
+    rtbd.SrcBlendAlpha = D3D11_BLEND_ONE;
+    rtbd.DestBlendAlpha = D3D11_BLEND_ZERO;
+    rtbd.BlendOpAlpha = D3D11_BLEND_OP_ADD;
+    rtbd.RenderTargetWriteMask = D3D10_COLOR_WRITE_ENABLE_ALL;
+
+    blendDesc.AlphaToCoverageEnable = false;
+    blendDesc.RenderTarget[0] = rtbd;
+
+    hr = _dev->CreateBlendState(&blendDesc, &_blendState);
+    if (FAILED(hr))
+    {
+        ErrorLogger::Log(hr, "Failed to create blend state.");
+        return false;
+    }
+
+
     _spriteBatch = std::make_unique<DirectX::SpriteBatch>(_devcon);
     _spriteFont = std::make_unique<DirectX::SpriteFont>(_dev, L"Data\\Fonts\\arial_14.spritefont");
 
@@ -270,25 +296,34 @@ bool Graphics::InitGraphicsD3D11(void)
 {
     HRESULT hr;     
 
-    hr = _cb_vs_vertexshader.Initialize(_dev, _devcon);
-    if (FAILED(hr))
-    {
-        ErrorLogger::Log(hr, "Failed to create constant buffer.");
-        return false;
-    } 
-
-    hr = D3DX11CreateShaderResourceViewFromFile(_dev, L"Data\\Textures\\circle_05.png", NULL, NULL, &_particleTexture, NULL);
+    // Load texture
+    hr = D3DX11CreateShaderResourceViewFromFile(_dev, L"Data\\Textures\\particle.png", NULL, NULL, &_particleTexture, NULL);
     if (FAILED(hr))
     {
         ErrorLogger::Log(hr, "Failed to create texture from file.");
         return false;
     }
 
+    // Initialize contant buffer(s)
+    hr = _cb_vs_vertexshader.Initialize(_dev, _devcon);
+    if (FAILED(hr))
+    {
+        ErrorLogger::Log(hr, "Failed to create constant buffer.");
+        return false;
+    } 
+    
+    hr = _cb_ps_pixelshader.Initialize(_dev, _devcon);
+    if (FAILED(hr))
+    {
+        ErrorLogger::Log(hr, "Failed to create constant buffer.");
+        return false;
+    } 
+
     // Initialize Entities
-    if (!_entity[0].Initialize(_dev, _devcon, _particleTexture, _cb_vs_vertexshader))
+    if (!_entity[0].Initialize(_dev, _devcon, _particleTexture, _cb_vs_vertexshader, _cb_ps_pixelshader))
         return false;
 
-    if (!_entity[1].Initialize(_dev, _devcon, _particleTexture, _cb_vs_vertexshader))
+    if (!_entity[1].Initialize(_dev, _devcon, _particleTexture, _cb_vs_vertexshader, _cb_ps_pixelshader))
         return false;
 
     _entity[1].SetPosition(20.0f, 20.0f, 100.0f);
@@ -306,10 +341,13 @@ void Graphics::RenderFrame(void)
     // Refresh depth stencil view
     _devcon->ClearDepthStencilView(_depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
+    float blendFactor[] = { 0.75f, 0.75f, 0.75f, 1.0f };
+
     _devcon->IASetInputLayout(_pLayout);
     _devcon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     _devcon->RSSetState(_rasterizerState);
     _devcon->OMSetDepthStencilState(_depthStencilState, 0);
+    _devcon->OMSetBlendState(_blendState, blendFactor, 0xFFFFFFFF);
     _devcon->PSSetSamplers(0, 1, &_samplerState);
     _devcon->VSSetShader(_pVS, 0, 0);
     _devcon->PSSetShader(_pPS, 0, 0);
@@ -318,20 +356,19 @@ void Graphics::RenderFrame(void)
     static XMFLOAT3 cameraPos = XMFLOAT3(0.0f, 0.0f, 0.0f);
     static XMFLOAT3 entityPos = XMFLOAT3(0.0f, 0.0f, 100.0f); // second entity, the first one is static
     static bool isEditing = false;
+    
+    _camera.SetPosition(cameraPos);
+
+    for (int i = 0; i < ARRAYSIZE(_entity); i++)
     {
-        _camera.SetPosition(cameraPos);
+        if (isEditing)
+            _entity[1].SetPosition(entityPos);
+        _entity[i].Draw(_camera.GetViewMatrix() * _camera.GetProjectionMatrix());
 
-        for (int i = 0; i < ARRAYSIZE(_entity); i++)
-        {
-            if (isEditing)
-                _entity[1].SetPosition(entityPos);
-            _entity[i].Draw(_camera.GetViewMatrix() * _camera.GetProjectionMatrix());
-
-            entityPos = _entity[1].GetPositionFloat3();
-        }        
-    }
+        entityPos = _entity[1].GetPositionFloat3();
+    }        
    
-    // Text / fps
+    // Text / FPS
     static int fpsCount = 0;
     static std::string fpsString = "FPS: 0";
     fpsCount += 1;
@@ -346,7 +383,6 @@ void Graphics::RenderFrame(void)
     ImGui_ImplDX11_NewFrame();
     ImGui_ImplWin32_NewFrame();
     ImGui::NewFrame();
-
     {
         // ImGui::SetNextWindowSize(ImVec2(500, 200));
         ImGui::Begin("Window");
@@ -404,11 +440,13 @@ void Graphics::CleanD3D(void)
     if (_depthStencilState) _depthStencilState->Release();
     if (_depthStencilView) _depthStencilView->Release();
     if (_depthStencilBuffer) _depthStencilBuffer->Release();
+    if (_blendState) _blendState->Release();
     if (_rasterizerState) _rasterizerState->Release();
     if (_pLayout) _pLayout->Release();
     if (_pVS) _pVS->Release();
     if (_pPS) _pPS->Release();
     if (_samplerState) _samplerState->Release();
+    if (_cb_ps_pixelshader.GetAddressOf()) _cb_ps_pixelshader.Release();
     if (_cb_vs_vertexshader.GetAddressOf()) _cb_vs_vertexshader.Release();    
     if (_swapchain) _swapchain->Release();
     if (_backbuffer) _backbuffer->Release();

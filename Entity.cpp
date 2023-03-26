@@ -1,11 +1,12 @@
 #include "Entity.h"
 
-bool Entity::Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceContext, ID3D11ShaderResourceView* texture, ConstantBuffer<CB_VS_vertexshader>& cb_vs_vertexbuffer)
+bool Entity::Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceContext, ID3D11ShaderResourceView* texture, ConstantBuffer<CB_VS_vertexshader>& cb_vs_vertexshader, ConstantBuffer<CB_PS_pixelshader>& cb_ps_pixelshader)
 {
 	_dev = device;
 	_devcon = deviceContext;
 	_texture = texture;
-	_cb_vs_vertexshader = &cb_vs_vertexbuffer;
+	_cb_vs_vertexshader = &cb_vs_vertexshader;
+    _cb_ps_pixelshader = &cb_ps_pixelshader;
 
     ID3D11Resource* colorTex;
     _texture->GetResource(&colorTex);
@@ -61,10 +62,16 @@ void Entity::SetTexture(ID3D11ShaderResourceView* texture)
 
 void Entity::Draw(const XMMATRIX& viewProjectionMatrix)
 {
+    // Update constant buffers
 	_cb_vs_vertexshader->_data.mat = _worldMatrix * viewProjectionMatrix;
 	_cb_vs_vertexshader->_data.mat = XMMatrixTranspose(_cb_vs_vertexshader->_data.mat);
-	_cb_vs_vertexshader->ApplyChanges();
+    if (!_cb_vs_vertexshader->ApplyChanges())
+        return;
 	_devcon->VSSetConstantBuffers(0, 1, _cb_vs_vertexshader->GetAddressOf());
+
+    _cb_ps_pixelshader->_data.alpha = 1.0f;
+    _cb_ps_pixelshader->ApplyChanges();
+    _devcon->PSSetConstantBuffers(0, 1, _cb_ps_pixelshader->GetAddressOf());
 
 	_devcon->PSSetShaderResources(0, 1, &_texture);  // set texture 
 	_devcon->IASetIndexBuffer(_indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);

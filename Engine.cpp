@@ -31,7 +31,7 @@ void Engine::Update()
 	Entity* gravitySource = &gfx._entity[0];
 	Entity* particle = &gfx._entity[1];
 
-	float gravityStrength = -0.015f;
+	float gravityStrength = -0.05f;
 
 	XMVECTOR gravitySourceVec = gravitySource->GetPositionVector();
 	XMFLOAT3 gravitySourceFloat3 = gravitySource->GetPositionFloat3();
@@ -53,8 +53,8 @@ void Engine::Update()
 	static float xVelocity = 0.02f;
 	static float yVelocity;
 
-	xVelocity += xAccelleration;
-	yVelocity += yAccelleration;
+	xVelocity += xAccelleration * dt;
+	yVelocity += yAccelleration * dt;
 
 	particle->AdjustPosition(XMFLOAT3(xVelocity, yVelocity, 0.0f));
 
