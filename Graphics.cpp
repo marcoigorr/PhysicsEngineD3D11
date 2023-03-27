@@ -77,7 +77,7 @@ bool Graphics::InitD3D11(HWND hWnd)
     scd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;     // use 32-bit color
     scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;      // how swap chain is to be used
     scd.OutputWindow = hWnd;                                // the window to be used
-    scd.SampleDesc.Count = 8;                               // MSAA (Anti-Alias)
+    scd.SampleDesc.Count = 1;                               // MSAA (Anti-Alias)
     scd.SampleDesc.Quality = 0;
     scd.Windowed = TRUE;                                    // windowed/full-screen mode
     scd.BufferDesc.Width = _wWidth;
@@ -130,29 +130,20 @@ bool Graphics::InitD3D11(HWND hWnd)
     dsd.MipLevels = 1;
     dsd.ArraySize = 1;
     dsd.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-    dsd.SampleDesc.Count = 8;
+    dsd.SampleDesc.Count = 1;
     dsd.SampleDesc.Quality = 0;
     dsd.Usage = D3D11_USAGE_DEFAULT;
     dsd.BindFlags = D3D11_BIND_DEPTH_STENCIL;
     dsd.CPUAccessFlags = 0;
     dsd.MiscFlags = 0;
 
+    // Create the texture for the depth buffer using the filled out description
     hr = _dev->CreateTexture2D(&dsd, NULL, &_depthStencilBuffer);
     if (FAILED(hr))
     {
         ErrorLogger::Log(hr, "Failed to create depth stencil buffer.");
         return false;
     }
-
-    hr = _dev->CreateDepthStencilView(_depthStencilBuffer, NULL, &_depthStencilView);
-    if (FAILED(hr))
-    {
-        ErrorLogger::Log(hr, "Failed to create depth stencil view.");
-        return false;
-    }
-
-    // Set render target as the back buffer
-    _devcon->OMSetRenderTargets(1, &_backbuffer, _depthStencilView);
 
     // Create depth stencil state
     D3D11_DEPTH_STENCIL_DESC dsdesc;
@@ -167,6 +158,23 @@ bool Graphics::InitD3D11(HWND hWnd)
         ErrorLogger::Log(hr, "Failed to create depth stencil state.");
         return false;
     }
+
+    // Initailze and create the depth stencil view
+    D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc;
+    ZeroMemory(&depthStencilViewDesc, sizeof(D3D11_DEPTH_STENCIL_VIEW_DESC));
+    depthStencilViewDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+    depthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+    depthStencilViewDesc.Texture2D.MipSlice = 0;
+
+    hr = _dev->CreateDepthStencilView(_depthStencilBuffer, &depthStencilViewDesc, &_depthStencilView);
+    if (FAILED(hr))
+    {
+        ErrorLogger::Log(hr, "Failed to create depth stencil view.");
+        return false;
+    }
+
+    // Bind the render target view and depth stencil buffer to the output render pipeline
+    _devcon->OMSetRenderTargets(1, &_backbuffer, _depthStencilView);
 
     // Set viewport
     D3D11_VIEWPORT viewport;
@@ -187,7 +195,7 @@ bool Graphics::InitD3D11(HWND hWnd)
     rd.MultisampleEnable = true;
     rd.FillMode = D3D11_FILL_MODE::D3D11_FILL_SOLID;
     rd.CullMode = D3D11_CULL_MODE::D3D11_CULL_NONE;
-    rd.FrontCounterClockwise = true;
+    rd.FrontCounterClockwise = false;
 
     hr = _dev->CreateRasterizerState(&rd, &_rasterizerState);
     if (FAILED(hr))
@@ -196,7 +204,7 @@ bool Graphics::InitD3D11(HWND hWnd)
         return false;
     }
 
-    // Create blend state
+    // Setup Blend State for transperency
     D3D11_BLEND_DESC blendDesc;
     ZeroMemory(&blendDesc, sizeof(D3D11_BLEND_DESC));
 
@@ -204,14 +212,14 @@ bool Graphics::InitD3D11(HWND hWnd)
     ZeroMemory(&rtbd, sizeof(D3D11_RENDER_TARGET_BLEND_DESC));
     rtbd.BlendEnable = true;
     rtbd.SrcBlend = D3D11_BLEND_SRC_ALPHA;
-    rtbd.DestBlend = D3D11_BLEND_INV_SRC_ALPHA; 
+    rtbd.DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
     rtbd.BlendOp = D3D11_BLEND_OP_ADD;
-    rtbd.SrcBlendAlpha = D3D11_BLEND_ZERO;
+    rtbd.SrcBlendAlpha = D3D11_BLEND_ONE;
     rtbd.DestBlendAlpha = D3D11_BLEND_ZERO;
     rtbd.BlendOpAlpha = D3D11_BLEND_OP_ADD;
     rtbd.RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 
-    blendDesc.AlphaToCoverageEnable = false;
+    blendDesc.AlphaToCoverageEnable = false;  // true if multi-sample renders
     blendDesc.RenderTarget[0] = rtbd;
 
     hr = _dev->CreateBlendState(&blendDesc, &_blendState);
@@ -302,47 +310,7 @@ bool Graphics::InitGraphicsD3D11(void)
     HRESULT hr;     
 
     // Load image and create texture
-    int imageWidth;
-    int imageHeight;
-    int imageChannels;
-    int imageDesiredChannels = 4;
-
-    unsigned char* imageData = stbi_load("Data\\Textures\\particle.png",
-        &imageWidth,
-        &imageHeight,
-        &imageChannels, imageDesiredChannels);
-    
-    int imagePitch = imageWidth * 4;
-
-    D3D11_TEXTURE2D_DESC textureDesc;
-    ZeroMemory(&textureDesc, sizeof(D3D11_TEXTURE2D_DESC));
-    textureDesc.Width = imageWidth;
-    textureDesc.Height = imageHeight;
-    textureDesc.MipLevels = 1;
-    textureDesc.ArraySize = 1;
-    textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
-    textureDesc.SampleDesc.Count = 8;
-    textureDesc.SampleDesc.Quality = 0;
-    textureDesc.Usage = D3D11_USAGE_IMMUTABLE;
-    textureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-
-    D3D11_SUBRESOURCE_DATA subresourceData;
-    ZeroMemory(&subresourceData, sizeof(D3D11_SUBRESOURCE_DATA));
-    subresourceData.pSysMem = imageData;
-    subresourceData.SysMemPitch = imagePitch;
-
-    ID3D11Texture2D* texture;
-
-    hr = _dev->CreateTexture2D(&textureDesc, &subresourceData, &texture);
-    if (FAILED(hr))
-    {
-        ErrorLogger::Log(hr, "Failed to create texture.");
-        return false;
-    }
-
-    free(imageData);
-
-    hr = _dev->CreateShaderResourceView(texture, nullptr, &_imageShaderResourceView);
+    hr = D3DX11CreateShaderResourceViewFromFile(_dev, L"Data\\Textures\\circle_06.png", NULL, NULL, &_imageShaderResourceView, NULL);
     if (FAILED(hr))
     {
         ErrorLogger::Log(hr, "Failed to create texture from file.");
@@ -371,6 +339,7 @@ bool Graphics::InitGraphicsD3D11(void)
     if (!_entity[1].Initialize(_dev, _devcon, _imageShaderResourceView, _cb_vs_vertexshader, _cb_ps_pixelshader))
         return false;
 
+    _entity[0].SetPosition(0.0f, 0.0f, 100.0f);
     _entity[1].SetPosition(20.0f, 20.0f, 100.0f);
 
     _camera.SetProjectionValues(90.0f, static_cast<float>(_wWidth) / static_cast<float>(_wHeight), 0.1f, 1000.0f);
@@ -387,7 +356,7 @@ void Graphics::RenderFrame(void)
     _devcon->ClearDepthStencilView(_depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
     float blendFactor[] = { 0.75f, 0.75f, 0.75f, 1.0f };
-    _devcon->OMSetBlendState(_blendState, blendFactor, 0xFFFFFFFF);
+    _devcon->OMSetBlendState(_blendState, NULL, 0xFFFFFFFF);
 
     _devcon->IASetInputLayout(_pLayout);
     _devcon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -408,7 +377,8 @@ void Graphics::RenderFrame(void)
     {
         if (isEditing)
             _entity[1].SetPosition(entityPos);
-        _entity[i].Draw(_camera.GetViewMatrix() * _camera.GetProjectionMatrix());
+        _entity[1].Draw(_camera.GetViewMatrix() * _camera.GetProjectionMatrix());
+        _entity[0].Draw(_camera.GetViewMatrix() * _camera.GetProjectionMatrix());
 
         entityPos = _entity[1].GetPositionFloat3();
     }        
@@ -434,7 +404,7 @@ void Graphics::RenderFrame(void)
         {
             ImGui::Text(fpsString.c_str());
             static float* cam[3] = { &cameraPos.x, &cameraPos.y, &cameraPos.z };
-            ImGui::SliderFloat3("Camera Position (x, y, z)", *cam, -100.0f, 100.0f, "%0.1f");
+            ImGui::DragFloat3("Camera Position (x, y, z)", *cam, 0.1f, -100.0f, 100.0f, "%0.1f");
             if (ImGui::Button("RESET CAMERA", { 100.0f,20.0f }))
             {
                 cameraPos.x = 0.0f;
@@ -448,7 +418,7 @@ void Graphics::RenderFrame(void)
             if (isEditing)
             {
                 static float* ent[3] = { &entityPos.x, &entityPos.y, &entityPos.z };
-                ImGui::SliderFloat3("Entity Position (x, y, z)", *ent, -100.0f, 100.0f, "%0.1f", 0);
+                ImGui::DragFloat3("Entity Position (x, y, z)", *ent, 0.1f, -100.0f, 100.0f, "%0.1f");
                 if (ImGui::Button("RESET ENTITY", { 100.0f,20.0f }))
                 {
                     entityPos.x = 0.0f;
