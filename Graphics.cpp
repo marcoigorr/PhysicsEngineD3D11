@@ -377,8 +377,7 @@ void Graphics::RenderFrame(void)
     {
         if (isEditing)
             _entity[1].SetPosition(entityPos);
-        _entity[1].Draw(_camera.GetViewMatrix() * _camera.GetProjectionMatrix());
-        _entity[0].Draw(_camera.GetViewMatrix() * _camera.GetProjectionMatrix());
+        _entity[i].Draw(_camera.GetViewMatrix() * _camera.GetProjectionMatrix());
 
         entityPos = _entity[1].GetPositionFloat3();
     }        
