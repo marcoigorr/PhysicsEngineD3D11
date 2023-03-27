@@ -24,5 +24,3 @@ public:
 		MessageBoxW(NULL, errorMsg.c_str(), L"Error", MB_ICONERROR);
 	}
 };
-
-extern ErrorLogger* ErrLogger;

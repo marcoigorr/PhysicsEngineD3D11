@@ -1,4 +1,6 @@
 #include "Graphics.h"
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
 
 bool Graphics::Initialize(HWND hWnd, int width, int height)
 {
@@ -222,7 +224,7 @@ bool Graphics::InitD3D11(HWND hWnd)
     _spriteBatch = std::make_unique<DirectX::SpriteBatch>(_devcon);
     _spriteFont = std::make_unique<DirectX::SpriteFont>(_dev, L"Data\\Fonts\\arial_14.spritefont");
 
-    // Texture
+    // Texture sampler
     D3D11_SAMPLER_DESC sd;
     ZeroMemory(&sd, sizeof(D3D11_SAMPLER_DESC));
     sd.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
@@ -299,8 +301,48 @@ bool Graphics::InitGraphicsD3D11(void)
 {
     HRESULT hr;     
 
-    // Load texture
-    hr = D3DX11CreateShaderResourceViewFromFile(_dev, L"Data\\Textures\\particle.png", NULL, NULL, &_particleTexture, NULL);
+    // Load image and create texture
+    int imageWidth;
+    int imageHeight;
+    int imageChannels;
+    int imageDesiredChannels = 4;
+
+    unsigned char* imageData = stbi_load("Data\\Textures\\particle.png",
+        &imageWidth,
+        &imageHeight,
+        &imageChannels, imageDesiredChannels);
+    
+    int imagePitch = imageWidth * 4;
+
+    D3D11_TEXTURE2D_DESC textureDesc;
+    ZeroMemory(&textureDesc, sizeof(D3D11_TEXTURE2D_DESC));
+    textureDesc.Width = imageWidth;
+    textureDesc.Height = imageHeight;
+    textureDesc.MipLevels = 1;
+    textureDesc.ArraySize = 1;
+    textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+    textureDesc.SampleDesc.Count = 8;
+    textureDesc.SampleDesc.Quality = 0;
+    textureDesc.Usage = D3D11_USAGE_IMMUTABLE;
+    textureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+
+    D3D11_SUBRESOURCE_DATA subresourceData;
+    ZeroMemory(&subresourceData, sizeof(D3D11_SUBRESOURCE_DATA));
+    subresourceData.pSysMem = imageData;
+    subresourceData.SysMemPitch = imagePitch;
+
+    ID3D11Texture2D* texture;
+
+    hr = _dev->CreateTexture2D(&textureDesc, &subresourceData, &texture);
+    if (FAILED(hr))
+    {
+        ErrorLogger::Log(hr, "Failed to create texture.");
+        return false;
+    }
+
+    free(imageData);
+
+    hr = _dev->CreateShaderResourceView(texture, nullptr, &_imageShaderResourceView);
     if (FAILED(hr))
     {
         ErrorLogger::Log(hr, "Failed to create texture from file.");
@@ -323,10 +365,10 @@ bool Graphics::InitGraphicsD3D11(void)
     } 
 
     // Initialize Entities
-    if (!_entity[0].Initialize(_dev, _devcon, _particleTexture, _cb_vs_vertexshader, _cb_ps_pixelshader))
+    if (!_entity[0].Initialize(_dev, _devcon, _imageShaderResourceView, _cb_vs_vertexshader, _cb_ps_pixelshader))
         return false;
 
-    if (!_entity[1].Initialize(_dev, _devcon, _particleTexture, _cb_vs_vertexshader, _cb_ps_pixelshader))
+    if (!_entity[1].Initialize(_dev, _devcon, _imageShaderResourceView, _cb_vs_vertexshader, _cb_ps_pixelshader))
         return false;
 
     _entity[1].SetPosition(20.0f, 20.0f, 100.0f);
@@ -435,7 +477,7 @@ void Graphics::CleanD3D(void)
     _swapchain->SetFullscreenState(FALSE, NULL);    // switch to windowed mode
 
     // close and release all existing COM objects
-    if (_particleTexture) _particleTexture->Release();
+    if (_imageShaderResourceView) _imageShaderResourceView->Release();
     if (&_entity[0]) _entity[0].Release();
     if (&_entity[1]) _entity[1].Release();
     if (_spriteBatch) _spriteBatch.release();
