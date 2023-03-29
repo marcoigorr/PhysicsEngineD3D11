@@ -110,7 +110,7 @@ bool Graphics::InitD3D11(HWND hWnd)
     }
 
     // Get address of back buffer
-    ID3D11Texture2D* pBackBuffer;
+    ID3D11Texture2D* pBackBuffer = nullptr;
     _swapchain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&pBackBuffer);
 
     // Use the back buffer address to create the render target
@@ -151,6 +151,22 @@ bool Graphics::InitD3D11(HWND hWnd)
     dsdesc.DepthEnable = true;
     dsdesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
     dsdesc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
+
+    dsdesc.StencilEnable = true;
+    dsdesc.StencilReadMask = 0xFF;
+    dsdesc.StencilWriteMask = 0xFF;
+
+    //stencil operations if pixel is front-facing
+    dsdesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+    dsdesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_INCR;
+    dsdesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+    dsdesc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+
+    //stencil operations if pixel is back-facing
+    dsdesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+    dsdesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_DECR;
+    dsdesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+    dsdesc.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
 
     hr = _dev->CreateDepthStencilState(&dsdesc, &_depthStencilState);
     if (FAILED(hr))
@@ -235,13 +251,15 @@ bool Graphics::InitD3D11(HWND hWnd)
     // Texture sampler
     D3D11_SAMPLER_DESC sd;
     ZeroMemory(&sd, sizeof(D3D11_SAMPLER_DESC));
-    sd.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+    sd.Filter = D3D11_FILTER_ANISOTROPIC;
     sd.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;  // x coord on texture
     sd.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;  // y
     sd.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;  // for 3d textures
-    sd.ComparisonFunc = D3D11_COMPARISON_NEVER;
+    sd.MipLODBias = 0;
+    sd.MaxAnisotropy = 8;
+    sd.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
     sd.MinLOD = 0;  // Level of detail
-    sd.MaxLOD = D3D11_FLOAT32_MAX;
+    sd.MaxLOD = 0;
     
     hr = _dev->CreateSamplerState(&sd, &_samplerState);
     if (FAILED(hr))
@@ -310,7 +328,7 @@ bool Graphics::InitGraphicsD3D11(void)
     HRESULT hr;     
 
     // Load image and create texture
-    hr = D3DX11CreateShaderResourceViewFromFile(_dev, L"Data\\Textures\\circle_06.png", NULL, NULL, &_imageShaderResourceView, NULL);
+    hr = D3DX11CreateShaderResourceViewFromFile(_dev, L"Data\\Textures\\particle.png", NULL, NULL, &_imageShaderResourceView, NULL);
     if (FAILED(hr))
     {
         ErrorLogger::Log(hr, "Failed to create texture from file.");
@@ -353,18 +371,18 @@ void Graphics::RenderFrame(void)
     _devcon->ClearRenderTargetView(_backbuffer, D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f));
 
     // Refresh depth stencil view
-    _devcon->ClearDepthStencilView(_depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+    _devcon->ClearDepthStencilView(_depthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);
 
-    float blendFactor[] = { 0.75f, 0.75f, 0.75f, 1.0f };
-    _devcon->OMSetBlendState(_blendState, NULL, 0xFFFFFFFF);
+    constexpr float blendFactor[] = { 0, 0, 0, 0 };
+    _devcon->OMSetBlendState(_blendState, blendFactor, 0xFFFFFFFF);
 
     _devcon->IASetInputLayout(_pLayout);
     _devcon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     _devcon->RSSetState(_rasterizerState);
-    _devcon->OMSetDepthStencilState(_depthStencilState, 0);
+    _devcon->OMSetDepthStencilState(_depthStencilState, 1);
     _devcon->PSSetSamplers(0, 1, &_samplerState);
-    _devcon->VSSetShader(_pVS, 0, 0);
-    _devcon->PSSetShader(_pPS, 0, 0);
+    _devcon->VSSetShader(_pVS, nullptr, 0);
+    _devcon->PSSetShader(_pPS, nullptr, 0);
 
     // Entity draw and manipulation
     static XMFLOAT3 cameraPos = XMFLOAT3(0.0f, 0.0f, 0.0f);
@@ -377,7 +395,8 @@ void Graphics::RenderFrame(void)
     {
         if (isEditing)
             _entity[1].SetPosition(entityPos);
-        _entity[i].Draw(_camera.GetViewMatrix() * _camera.GetProjectionMatrix());
+        _entity[1].Draw(_camera.GetViewMatrix() * _camera.GetProjectionMatrix());
+        _entity[0].Draw(_camera.GetViewMatrix() * _camera.GetProjectionMatrix());
 
         entityPos = _entity[1].GetPositionFloat3();
     }        
