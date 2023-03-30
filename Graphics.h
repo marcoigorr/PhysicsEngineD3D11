@@ -14,7 +14,6 @@
 #include "ConstantBufferTypes.h"
 #include <SpriteBatch.h>
 #include <SpriteFont.h>
-#include <WICTextureLoader.h>
 #include "Timer.h"
 #include "ImGui/imgui.h"
 #include "ImGui/imgui_impl_win32.h"
@@ -39,21 +38,24 @@ private:
 	ID3D11DeviceContext* _devcon;				// pointer to Direct3D device context
 	ID3D11RenderTargetView* _backbuffer;		// pointer to back buffer
 	ID3D11VertexShader* _pVS;					// vertex shader (run once for each vertex rendered)
-	ID3D11PixelShader* _pPS;					// pixel shader (run for each pixel drawn
+	ID3D11PixelShader* _pPS;					// pixel shader (run for each pixel drawn)s
 	ID3D11InputLayout* _pLayout;				// input layout
 	ID3D11RasterizerState* _rasterizerState;
-
+	 
 	ID3D11Texture2D* _depthStencilBuffer;
 	ID3D11DepthStencilView* _depthStencilView;
 	ID3D11DepthStencilState* _depthStencilState;
 
 	ConstantBuffer<CB_VS_vertexshader> _cb_vs_vertexshader;
+	ConstantBuffer<CB_PS_pixelshader> _cb_ps_pixelshader;
+
+	ID3D11BlendState* _blendState;
 
 	std::unique_ptr<DirectX::SpriteBatch> _spriteBatch;
 	std::unique_ptr<DirectX::SpriteFont> _spriteFont;
 
 	ID3D11SamplerState* _samplerState;
-	ID3D11ShaderResourceView* _particleTexture;
+	ID3D11ShaderResourceView* _imageShaderResourceView;
 
 	Timer _fpsTimer;
 

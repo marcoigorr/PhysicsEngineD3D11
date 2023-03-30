@@ -1,4 +1,6 @@
 #include "Graphics.h"
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
 
 bool Graphics::Initialize(HWND hWnd, int width, int height)
 {
@@ -75,7 +77,7 @@ bool Graphics::InitD3D11(HWND hWnd)
     scd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;     // use 32-bit color
     scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;      // how swap chain is to be used
     scd.OutputWindow = hWnd;                                // the window to be used
-    scd.SampleDesc.Count = 8;                               // MSAA (Anti-Alias)
+    scd.SampleDesc.Count = 1;                               // MSAA (Anti-Alias)
     scd.SampleDesc.Quality = 0;
     scd.Windowed = TRUE;                                    // windowed/full-screen mode
     scd.BufferDesc.Width = _wWidth;
@@ -108,11 +110,11 @@ bool Graphics::InitD3D11(HWND hWnd)
     }
 
     // Get address of back buffer
-    ID3D11Texture2D* pBackBuffer;
+    ID3D11Texture2D* pBackBuffer = nullptr;
     _swapchain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&pBackBuffer);
 
     // Use the back buffer address to create the render target
-    hr = _dev->CreateRenderTargetView(pBackBuffer, NULL, &_backbuffer);
+    hr = _dev->CreateRenderTargetView(pBackBuffer, nullptr, &_backbuffer);
     pBackBuffer->Release();
     if (FAILED(hr))
     {
@@ -128,29 +130,20 @@ bool Graphics::InitD3D11(HWND hWnd)
     dsd.MipLevels = 1;
     dsd.ArraySize = 1;
     dsd.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-    dsd.SampleDesc.Count = 8;
+    dsd.SampleDesc.Count = 1;
     dsd.SampleDesc.Quality = 0;
     dsd.Usage = D3D11_USAGE_DEFAULT;
     dsd.BindFlags = D3D11_BIND_DEPTH_STENCIL;
     dsd.CPUAccessFlags = 0;
     dsd.MiscFlags = 0;
 
+    // Create the texture for the depth buffer using the filled out description
     hr = _dev->CreateTexture2D(&dsd, NULL, &_depthStencilBuffer);
     if (FAILED(hr))
     {
         ErrorLogger::Log(hr, "Failed to create depth stencil buffer.");
         return false;
     }
-
-    hr = _dev->CreateDepthStencilView(_depthStencilBuffer, NULL, &_depthStencilView);
-    if (FAILED(hr))
-    {
-        ErrorLogger::Log(hr, "Failed to create depth stencil view.");
-        return false;
-    }
-
-    // Set render target as the back buffer
-    _devcon->OMSetRenderTargets(1, &_backbuffer, _depthStencilView);
 
     // Create depth stencil state
     D3D11_DEPTH_STENCIL_DESC dsdesc;
@@ -159,12 +152,45 @@ bool Graphics::InitD3D11(HWND hWnd)
     dsdesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
     dsdesc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
 
+    dsdesc.StencilEnable = true;
+    dsdesc.StencilReadMask = 0xFF;
+    dsdesc.StencilWriteMask = 0xFF;
+
+    //stencil operations if pixel is front-facing
+    dsdesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+    dsdesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_INCR;
+    dsdesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+    dsdesc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+
+    //stencil operations if pixel is back-facing
+    dsdesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+    dsdesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_DECR;
+    dsdesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+    dsdesc.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+
     hr = _dev->CreateDepthStencilState(&dsdesc, &_depthStencilState);
     if (FAILED(hr))
     {
         ErrorLogger::Log(hr, "Failed to create depth stencil state.");
         return false;
     }
+
+    // Initailze and create the depth stencil view
+    D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc;
+    ZeroMemory(&depthStencilViewDesc, sizeof(D3D11_DEPTH_STENCIL_VIEW_DESC));
+    depthStencilViewDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+    depthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+    depthStencilViewDesc.Texture2D.MipSlice = 0;
+
+    hr = _dev->CreateDepthStencilView(_depthStencilBuffer, &depthStencilViewDesc, &_depthStencilView);
+    if (FAILED(hr))
+    {
+        ErrorLogger::Log(hr, "Failed to create depth stencil view.");
+        return false;
+    }
+
+    // Bind the render target view and depth stencil buffer to the output render pipeline
+    _devcon->OMSetRenderTargets(1, &_backbuffer, _depthStencilView);
 
     // Set viewport
     D3D11_VIEWPORT viewport;
@@ -181,8 +207,12 @@ bool Graphics::InitD3D11(HWND hWnd)
     // Create rasterizer state
     D3D11_RASTERIZER_DESC rd;
     ZeroMemory(&rd, sizeof(D3D11_RASTERIZER_DESC));
+    rd.AntialiasedLineEnable = true;
+    rd.MultisampleEnable = false;
     rd.FillMode = D3D11_FILL_MODE::D3D11_FILL_SOLID;
-    rd.CullMode = D3D11_CULL_MODE::D3D11_CULL_BACK;
+    rd.CullMode = D3D11_CULL_MODE::D3D11_CULL_NONE;
+    rd.FrontCounterClockwise = false;
+
     hr = _dev->CreateRasterizerState(&rd, &_rasterizerState);
     if (FAILED(hr))
     {
@@ -190,17 +220,44 @@ bool Graphics::InitD3D11(HWND hWnd)
         return false;
     }
 
+    // Setup Blend State for transperency
+    D3D11_BLEND_DESC blendDesc;
+    ZeroMemory(&blendDesc, sizeof(D3D11_BLEND_DESC));
+
+    D3D11_RENDER_TARGET_BLEND_DESC rtbd;
+    ZeroMemory(&rtbd, sizeof(D3D11_RENDER_TARGET_BLEND_DESC));
+    rtbd.BlendEnable = true;
+    rtbd.SrcBlend = D3D11_BLEND_SRC_ALPHA;
+    rtbd.DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+    rtbd.BlendOp = D3D11_BLEND_OP_ADD;
+    rtbd.SrcBlendAlpha = D3D11_BLEND_ONE;
+    rtbd.DestBlendAlpha = D3D11_BLEND_ZERO;
+    rtbd.BlendOpAlpha = D3D11_BLEND_OP_ADD;
+    rtbd.RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+
+    blendDesc.AlphaToCoverageEnable = false;  // true if multi-sample renders
+    blendDesc.RenderTarget[0] = rtbd;
+
+    hr = _dev->CreateBlendState(&blendDesc, &_blendState);
+    if (FAILED(hr))
+    {
+        ErrorLogger::Log(hr, "Failed to create blend state.");
+        return false;
+    }
+
     _spriteBatch = std::make_unique<DirectX::SpriteBatch>(_devcon);
     _spriteFont = std::make_unique<DirectX::SpriteFont>(_dev, L"Data\\Fonts\\arial_14.spritefont");
 
-    // Texture
+    // Texture sampler
     D3D11_SAMPLER_DESC sd;
     ZeroMemory(&sd, sizeof(D3D11_SAMPLER_DESC));
     sd.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
     sd.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;  // x coord on texture
     sd.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;  // y
     sd.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;  // for 3d textures
-    sd.ComparisonFunc = D3D11_COMPARISON_NEVER;
+    sd.MipLODBias = 0;
+    sd.MaxAnisotropy = 8;
+    sd.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
     sd.MinLOD = 0;  // Level of detail
     sd.MaxLOD = D3D11_FLOAT32_MAX;
     
@@ -270,27 +327,37 @@ bool Graphics::InitGraphicsD3D11(void)
 {
     HRESULT hr;     
 
-    hr = _cb_vs_vertexshader.Initialize(_dev, _devcon);
-    if (FAILED(hr))
-    {
-        ErrorLogger::Log(hr, "Failed to create constant buffer.");
-        return false;
-    } 
-
-    hr = D3DX11CreateShaderResourceViewFromFile(_dev, L"Data\\Textures\\circle_05.png", NULL, NULL, &_particleTexture, NULL);
+    // Load image and create texture
+    hr = D3DX11CreateShaderResourceViewFromFile(_dev, L"Data\\Textures\\particle.png", NULL, NULL, &_imageShaderResourceView, NULL);
     if (FAILED(hr))
     {
         ErrorLogger::Log(hr, "Failed to create texture from file.");
         return false;
     }
 
+    // Initialize contant buffer(s)
+    hr = _cb_vs_vertexshader.Initialize(_dev, _devcon);
+    if (FAILED(hr))
+    {
+        ErrorLogger::Log(hr, "Failed to create constant buffer.");
+        return false;
+    } 
+    
+    hr = _cb_ps_pixelshader.Initialize(_dev, _devcon);
+    if (FAILED(hr))
+    {
+        ErrorLogger::Log(hr, "Failed to create constant buffer.");
+        return false;
+    } 
+
     // Initialize Entities
-    if (!_entity[0].Initialize(_dev, _devcon, _particleTexture, _cb_vs_vertexshader))
+    if (!_entity[0].Initialize(_dev, _devcon, _imageShaderResourceView, _cb_vs_vertexshader, _cb_ps_pixelshader))
         return false;
 
-    if (!_entity[1].Initialize(_dev, _devcon, _particleTexture, _cb_vs_vertexshader))
+    if (!_entity[1].Initialize(_dev, _devcon, _imageShaderResourceView, _cb_vs_vertexshader, _cb_ps_pixelshader))
         return false;
 
+    _entity[0].SetPosition(0.0f, 0.0f, 100.0f);
     _entity[1].SetPosition(20.0f, 20.0f, 100.0f);
 
     _camera.SetProjectionValues(90.0f, static_cast<float>(_wWidth) / static_cast<float>(_wHeight), 0.1f, 1000.0f);
@@ -304,34 +371,37 @@ void Graphics::RenderFrame(void)
     _devcon->ClearRenderTargetView(_backbuffer, D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f));
 
     // Refresh depth stencil view
-    _devcon->ClearDepthStencilView(_depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+    _devcon->ClearDepthStencilView(_depthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);
+
+    constexpr float blendFactor[] = { 0, 0, 0, 0 };
+    _devcon->OMSetBlendState(_blendState, blendFactor, 0xffffffff);
 
     _devcon->IASetInputLayout(_pLayout);
     _devcon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     _devcon->RSSetState(_rasterizerState);
-    _devcon->OMSetDepthStencilState(_depthStencilState, 0);
+    _devcon->OMSetDepthStencilState(_depthStencilState, 1);
     _devcon->PSSetSamplers(0, 1, &_samplerState);
-    _devcon->VSSetShader(_pVS, 0, 0);
-    _devcon->PSSetShader(_pPS, 0, 0);
+    _devcon->VSSetShader(_pVS, nullptr, 0);
+    _devcon->PSSetShader(_pPS, nullptr, 0);
 
     // Entity draw and manipulation
     static XMFLOAT3 cameraPos = XMFLOAT3(0.0f, 0.0f, 0.0f);
     static XMFLOAT3 entityPos = XMFLOAT3(0.0f, 0.0f, 100.0f); // second entity, the first one is static
     static bool isEditing = false;
+    
+    _camera.SetPosition(cameraPos);
+
+    for (int i = 0; i < ARRAYSIZE(_entity); i++)
     {
-        _camera.SetPosition(cameraPos);
+        if (isEditing)
+            _entity[1].SetPosition(entityPos);
+        _entity[1].Draw(_camera.GetViewMatrix() * _camera.GetProjectionMatrix());
+        _entity[0].Draw(_camera.GetViewMatrix() * _camera.GetProjectionMatrix());
 
-        for (int i = 0; i < ARRAYSIZE(_entity); i++)
-        {
-            if (isEditing)
-                _entity[1].SetPosition(entityPos);
-            _entity[i].Draw(_camera.GetViewMatrix() * _camera.GetProjectionMatrix());
-
-            entityPos = _entity[1].GetPositionFloat3();
-        }        
-    }
+        entityPos = _entity[1].GetPositionFloat3();
+    }        
    
-    // Text / fps
+    // Text / FPS
     static int fpsCount = 0;
     static std::string fpsString = "FPS: 0";
     fpsCount += 1;
@@ -346,14 +416,13 @@ void Graphics::RenderFrame(void)
     ImGui_ImplDX11_NewFrame();
     ImGui_ImplWin32_NewFrame();
     ImGui::NewFrame();
-
     {
         // ImGui::SetNextWindowSize(ImVec2(500, 200));
         ImGui::Begin("Window");
         {
             ImGui::Text(fpsString.c_str());
             static float* cam[3] = { &cameraPos.x, &cameraPos.y, &cameraPos.z };
-            ImGui::SliderFloat3("Camera Position (x, y, z)", *cam, -100.0f, 100.0f, "%0.1f");
+            ImGui::DragFloat3("Camera Position (x, y, z)", *cam, 0.1f, -100.0f, 100.0f, "%0.1f");
             if (ImGui::Button("RESET CAMERA", { 100.0f,20.0f }))
             {
                 cameraPos.x = 0.0f;
@@ -367,7 +436,7 @@ void Graphics::RenderFrame(void)
             if (isEditing)
             {
                 static float* ent[3] = { &entityPos.x, &entityPos.y, &entityPos.z };
-                ImGui::SliderFloat3("Entity Position (x, y, z)", *ent, -100.0f, 100.0f, "%0.1f", 0);
+                ImGui::DragFloat3("Entity Position (x, y, z)", *ent, 0.1f, -100.0f, 100.0f, "%0.1f");
                 if (ImGui::Button("RESET ENTITY", { 100.0f,20.0f }))
                 {
                     entityPos.x = 0.0f;
@@ -396,7 +465,7 @@ void Graphics::CleanD3D(void)
     _swapchain->SetFullscreenState(FALSE, NULL);    // switch to windowed mode
 
     // close and release all existing COM objects
-    if (_particleTexture) _particleTexture->Release();
+    if (_imageShaderResourceView) _imageShaderResourceView->Release();
     if (&_entity[0]) _entity[0].Release();
     if (&_entity[1]) _entity[1].Release();
     if (_spriteBatch) _spriteBatch.release();
@@ -404,11 +473,13 @@ void Graphics::CleanD3D(void)
     if (_depthStencilState) _depthStencilState->Release();
     if (_depthStencilView) _depthStencilView->Release();
     if (_depthStencilBuffer) _depthStencilBuffer->Release();
+    if (_blendState) _blendState->Release();
     if (_rasterizerState) _rasterizerState->Release();
     if (_pLayout) _pLayout->Release();
     if (_pVS) _pVS->Release();
     if (_pPS) _pPS->Release();
     if (_samplerState) _samplerState->Release();
+    if (_cb_ps_pixelshader.GetAddressOf()) _cb_ps_pixelshader.Release();
     if (_cb_vs_vertexshader.GetAddressOf()) _cb_vs_vertexshader.Release();    
     if (_swapchain) _swapchain->Release();
     if (_backbuffer) _backbuffer->Release();

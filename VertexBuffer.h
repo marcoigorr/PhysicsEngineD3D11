@@ -51,7 +51,7 @@ public:
 		ZeroMemory(&vertexBufferDesc, sizeof(vertexBufferDesc));
 		vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
 		vertexBufferDesc.ByteWidth = sizeof(T) * numVertices;
-		vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+		vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER | D3D11_BIND_STREAM_OUTPUT;
 		vertexBufferDesc.CPUAccessFlags = 0;
 
 		D3D11_SUBRESOURCE_DATA vertexBufferData;

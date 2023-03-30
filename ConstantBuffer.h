@@ -61,6 +61,7 @@ public:
 		}
 		memcpy(mp.pData, &_data, sizeof(T));
 		_devcon->Unmap(_buffer, NULL);
+		return true;
 	}
 };
 
