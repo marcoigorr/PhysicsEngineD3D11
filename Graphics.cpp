@@ -66,19 +66,20 @@ bool Graphics::InitImGui(HWND hWnd)
 
 bool Graphics::InitD3D11(HWND hWnd)
 {
+    HRESULT hr;
+
     // Struct hold information about swap chain
     DXGI_SWAP_CHAIN_DESC scd;
-
-    // Set scd struct to NULL
-    ZeroMemory(&scd, sizeof(DXGI_SWAP_CHAIN_DESC));
+	ZeroMemory(&scd, sizeof(DXGI_SWAP_CHAIN_DESC));
     
     // Fill the swap chain description struct
+    // Note: If multi-sample antialiasing is being used, all bound render targets and depth buffers must have the same sample counts and quality levels.
     scd.BufferCount = 1;                                    // one back buffer
     scd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;     // use 32-bit color
     scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;      // how swap chain is to be used
     scd.OutputWindow = hWnd;                                // the window to be used
     scd.SampleDesc.Count = 1;                               // MSAA (Anti-Alias)
-    scd.SampleDesc.Quality = 0;
+    scd.SampleDesc.Quality = 0;                             // The valid range is between zero and one less than the level returned by ID3D11Device::CheckMultisampleQualityLevels
     scd.Windowed = TRUE;                                    // windowed/full-screen mode
     scd.BufferDesc.Width = _wWidth;
     scd.BufferDesc.Height = _wHeight;
@@ -86,8 +87,6 @@ bool Graphics::InitD3D11(HWND hWnd)
     scd.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
     scd.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
     scd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
-
-    HRESULT hr;   
     
     // Create device, device context and swap chain using the information in the scd struct
     hr = D3D11CreateDeviceAndSwapChain( NULL,
@@ -385,8 +384,8 @@ void Graphics::RenderFrame(void)
     _devcon->PSSetShader(_pPS, nullptr, 0);
 
     // Entity draw and manipulation
-    static XMFLOAT3 cameraPos = XMFLOAT3(0.0f, 0.0f, 0.0f);
-    static XMFLOAT3 entityPos = XMFLOAT3(0.0f, 0.0f, 100.0f); // second entity, the first one is static
+    static XMFLOAT3 cameraPos = XMFLOAT3(0.0f, 0.0f, 90.0f);
+    static XMFLOAT3 entityPos = XMFLOAT3(0.0f, 0.0f, 100.0f); // second entity "[1]", the first one is static
     static bool isEditing = false;
     
     _camera.SetPosition(cameraPos);
@@ -395,8 +394,7 @@ void Graphics::RenderFrame(void)
     {
         if (isEditing)
             _entity[1].SetPosition(entityPos);
-        _entity[1].Draw(_camera.GetViewMatrix() * _camera.GetProjectionMatrix());
-        _entity[0].Draw(_camera.GetViewMatrix() * _camera.GetProjectionMatrix());
+        _entity[i].Draw(_camera.GetViewMatrix() * _camera.GetProjectionMatrix());
 
         entityPos = _entity[1].GetPositionFloat3();
     }        

@@ -17,7 +17,7 @@ float4 main(PS_INPUT input) : SV_TARGET
     float4 pixelColor = objTexture.Sample(objSamplerState, input.inTexCoord);
 
     // Debug: see alpha channel 
-    /*pixelColor[0] = pixelColor[3];
+    /* pixelColor[0] = pixelColor[3];
     pixelColor[1] = pixelColor[2] = 0;
     pixelColor[3] = 1; */
     
