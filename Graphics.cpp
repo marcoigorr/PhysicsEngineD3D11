@@ -114,7 +114,7 @@ bool Graphics::InitD3D11(HWND hWnd)
     _swapchain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&pBackBuffer);
 
     // Use the back buffer address to create the render target
-    hr = _dev->CreateRenderTargetView(pBackBuffer, NULL, &_backbuffer);
+    hr = _dev->CreateRenderTargetView(pBackBuffer, nullptr, &_backbuffer);
     pBackBuffer->Release();
     if (FAILED(hr))
     {
@@ -208,7 +208,7 @@ bool Graphics::InitD3D11(HWND hWnd)
     D3D11_RASTERIZER_DESC rd;
     ZeroMemory(&rd, sizeof(D3D11_RASTERIZER_DESC));
     rd.AntialiasedLineEnable = true;
-    rd.MultisampleEnable = true;
+    rd.MultisampleEnable = false;
     rd.FillMode = D3D11_FILL_MODE::D3D11_FILL_SOLID;
     rd.CullMode = D3D11_CULL_MODE::D3D11_CULL_NONE;
     rd.FrontCounterClockwise = false;
@@ -251,7 +251,7 @@ bool Graphics::InitD3D11(HWND hWnd)
     // Texture sampler
     D3D11_SAMPLER_DESC sd;
     ZeroMemory(&sd, sizeof(D3D11_SAMPLER_DESC));
-    sd.Filter = D3D11_FILTER_ANISOTROPIC;
+    sd.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
     sd.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;  // x coord on texture
     sd.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;  // y
     sd.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;  // for 3d textures
@@ -259,7 +259,7 @@ bool Graphics::InitD3D11(HWND hWnd)
     sd.MaxAnisotropy = 8;
     sd.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
     sd.MinLOD = 0;  // Level of detail
-    sd.MaxLOD = 0;
+    sd.MaxLOD = D3D11_FLOAT32_MAX;
     
     hr = _dev->CreateSamplerState(&sd, &_samplerState);
     if (FAILED(hr))
@@ -374,7 +374,7 @@ void Graphics::RenderFrame(void)
     _devcon->ClearDepthStencilView(_depthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);
 
     constexpr float blendFactor[] = { 0, 0, 0, 0 };
-    _devcon->OMSetBlendState(_blendState, blendFactor, 0xFFFFFFFF);
+    _devcon->OMSetBlendState(_blendState, blendFactor, 0xffffffff);
 
     _devcon->IASetInputLayout(_pLayout);
     _devcon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
