@@ -6,9 +6,8 @@ bool ImGuiWindow::Initialize(HWND hWnd, ID3D11Device* dev, ID3D11DeviceContext* 
     ImGui::CreateContext();
 
     ImGuiIO& io = ImGui::GetIO();
-    io.IniFilename = nullptr;
     io.LogFilename = nullptr;
-    io.WantSaveIniSettings = false;
+    io.WantSaveIniSettings = true;
 
     ImGui::StyleColorsDark();
     ImGuiStyle& style = ImGui::GetStyle();

@@ -16,20 +16,29 @@ bool Engine::Initialize(HINSTANCE hInstance, std::string window_title, std::stri
 
 void Engine::CleanD3D()
 {
-	this->_gfx.CleanD3D();
+	_gfx.CleanD3D();
 }
 
 bool Engine::ProcessMessages()
 {
-	return this->_renderWindow.ProcessMessages();
+	return _renderWindow.ProcessMessages();
 }
 
-void Engine::Update()
+bool Engine::Update()
 {
 	float dt = _timer.GetMillisecondElapsed();
 
-	Entity* gravitySource = &_gfx._entity[0];
-	Entity* particle = &_gfx._entity[1];
+	static Entity* gravitySource = &_gfx._entity[0];
+	static Entity* particle = &_gfx._entity[1];
+
+	static float xVelocity = 0.02f;
+	static float yVelocity;
+
+	if (particle->isBeingEdited)
+	{
+		_timer.Restart();
+		return true;
+	}
 
 	float gravityStrength = -0.05f;
 
@@ -50,18 +59,16 @@ void Engine::Update()
 	float xAccelleration = xNormalized * gravityStrength * inverseSquareDropoff;
 	float yAccelleration = yNormalized * gravityStrength * inverseSquareDropoff;
 
-	static float xVelocity = 0.02f;
-	static float yVelocity;
-
 	xVelocity += xAccelleration * dt;
 	yVelocity += yAccelleration * dt;
 
 	particle->AdjustPosition(XMFLOAT3(xVelocity, yVelocity, 0.0f));
 
 	_timer.Restart();
+	return true;
 }
 
 void Engine::RenderFrame()
 {
-	this->_gfx.RenderFrame();
+	_gfx.RenderFrame();
 }

@@ -25,6 +25,8 @@ public:
 	void AdjustPosition(const XMFLOAT3& pos);
 	void AdjustPosition(float x, float y, float z);
 
+	bool isBeingEdited = false;
+
 private:
 	void UpdateWorldMatrix();
 

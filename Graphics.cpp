@@ -348,22 +348,22 @@ void Graphics::RenderFrame(void)
     _devcon->VSSetShader(_pVS, nullptr, 0);
     _devcon->PSSetShader(_pPS, nullptr, 0);
 
-    // Entity draw and manipulation
-    static XMFLOAT3 cameraPos = XMFLOAT3(0.0f, 0.0f, 0.0f);
-    static XMFLOAT3 entityPos = XMFLOAT3(0.0f, 0.0f, 100.0f); // second entity "[1]", the first one is static
-    static bool isEditing = false;
+    // Entity draw
+    static XMFLOAT3 cameraPos;
+    static XMFLOAT3 entityPos;
     
     _camera.SetPosition(cameraPos);
 
     for (int i = 0; i < ARRAYSIZE(_entity); i++)
     {
-        if (isEditing)
+        if (!_entity[1].isBeingEdited)
+            entityPos = _entity[1].GetPositionFloat3();
+        else
             _entity[1].SetPosition(entityPos);
-        _entity[i].Draw(_camera.GetViewMatrix() * _camera.GetProjectionMatrix());
 
-        entityPos = _entity[1].GetPositionFloat3();
+        _entity[i].Draw(_camera.GetViewMatrix() * _camera.GetProjectionMatrix());
     }        
-   
+    
     // Text / FPS
     static int fpsCount = 0;
     static std::string fpsString = "FPS: 0";
@@ -377,37 +377,28 @@ void Graphics::RenderFrame(void)
 
     // Start ImGui
     _imgui->BeginRender();
+    ImGui::Begin("Camera");
     {
-        // ImGui::SetNextWindowSize(ImVec2(500, 200));
-        ImGui::Begin("Window");
+        //ImGui::Text(fpsString.c_str());
+        static float* camv[3] = { &cameraPos.x, &cameraPos.y, &cameraPos.z };
+        ImGui::DragFloat3("Camera Position (x, y, z)", *camv, 0.1f);
+        if (ImGui::Button("RESET POSITION", { 110.0f,20.0f }))
         {
-            ImGui::Text(fpsString.c_str());
-            static float* cam[3] = { &cameraPos.x, &cameraPos.y, &cameraPos.z };
-            ImGui::DragFloat3("Camera Position (x, y, z)", *cam, 0.1f, -100.0f, 100.0f, "%0.1f");
-            if (ImGui::Button("RESET CAMERA", { 100.0f,20.0f }))
-            {
-                cameraPos.x = 0.0f;
-                cameraPos.y = 0.0f;
-                cameraPos.z = 0.0f;
-            }
+            cameraPos = XMFLOAT3(0.0f, 0.0f, 0.0f);
+        }
+    } ImGui::End();
 
-            ImGui::Spacing();
-            
-            ImGui::Checkbox("Enable edit", &isEditing);
-            if (isEditing)
-            {
-                static float* ent[3] = { &entityPos.x, &entityPos.y, &entityPos.z };
-                ImGui::DragFloat3("Entity Position (x, y, z)", *ent, 0.1f, -100.0f, 100.0f, "%0.1f");
-                if (ImGui::Button("RESET ENTITY", { 100.0f,20.0f }))
-                {
-                    entityPos.x = 0.0f;
-                    entityPos.y = 20.0f;
-                    entityPos.z = 100.0f;
-                }
-            }           
+    ImGui::Begin("Entity[1]");
+    {
+        ImGui::Checkbox("Enable Edit", &_entity[1].isBeingEdited);
 
-        } ImGui::End();           
-    }
+        static float* entv[3] = { &entityPos.x, &entityPos.y, &entityPos.z };
+        ImGui::DragFloat3("Entity Position (x, y, z)", *entv, 0.1f);
+        if (ImGui::Button("RESET POSITION", { 110.0f,20.0f }))
+        {
+            entityPos = XMFLOAT3(0.0f, 0.0f, 100.0f);
+        }
+    } ImGui::End();
     _imgui->EndRender();    
 
     // Font Render

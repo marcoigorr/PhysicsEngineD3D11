@@ -8,7 +8,7 @@ public:
 	bool Initialize(HINSTANCE hInstance, std::string window_title, std::string window_class, int width, int height);
 	void CleanD3D();
 	bool ProcessMessages();
-	void Update();
+	bool Update();
 	void RenderFrame();
 
 private:
