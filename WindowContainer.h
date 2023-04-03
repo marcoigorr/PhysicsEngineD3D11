@@ -5,6 +5,6 @@
 class WindowContainer
 {
 public:
-	RenderWindow render_window;
-	Graphics gfx;
+	RenderWindow _renderWindow;
+	Graphics _gfx;
 };

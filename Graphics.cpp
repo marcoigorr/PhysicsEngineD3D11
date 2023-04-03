@@ -1,6 +1,4 @@
 #include "Graphics.h"
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
 
 bool Graphics::Initialize(HWND hWnd, int width, int height)
 {
@@ -26,41 +24,8 @@ bool Graphics::Initialize(HWND hWnd, int width, int height)
 
 bool Graphics::InitImGui(HWND hWnd)
 {
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-
-    ImGuiIO& io = ImGui::GetIO();
-    io.IniFilename = nullptr;
-    io.LogFilename = nullptr;
-    io.WantSaveIniSettings = false;
-
-    ImGui::StyleColorsDark();
-    ImGuiStyle& style = ImGui::GetStyle();
-    style.WindowMinSize = ImVec2(550, 200);
-    style.WindowTitleAlign = ImVec2(0.50f, 0.50f); // Title
-    // style.WindowPadding = ImVec2(20.0f, 20.0f);
-    // style.WindowRounding = 9.0f;
-    // style.FrameRounding = 12.0f;
-    // style.FramePadding = ImVec2(17.0f, 4.0f);
-    // style.TabRounding = 9.0f;
-    // style.GrabRounding = 10.0f;
-    // style.GrabMinSize = 15.0f;
-    // style.ScrollbarSize = 17.0f;
-    // style.ItemSpacing = ImVec2(13.0f, 4.0f);
-    // style.ItemInnerSpacing = ImVec2(10.0f, 8.0f);
-
-    if (!ImGui_ImplWin32_Init(hWnd))
-    {
-        ErrorLogger::Log("ImGui_ImplWin32_Init, failed to initialize ImGui.");
+    if (!_imgui->Initialize(hWnd, _dev, _devcon))
         return false;
-    }
-
-    if (!ImGui_ImplDX11_Init(_dev, _devcon))
-    {
-        ErrorLogger::Log("ImGui_ImplDX11_Init, failed to initialize ImGui.");
-        return false;
-    }
-
     return true;
 }
 
@@ -384,7 +349,7 @@ void Graphics::RenderFrame(void)
     _devcon->PSSetShader(_pPS, nullptr, 0);
 
     // Entity draw and manipulation
-    static XMFLOAT3 cameraPos = XMFLOAT3(0.0f, 0.0f, 90.0f);
+    static XMFLOAT3 cameraPos = XMFLOAT3(0.0f, 0.0f, 0.0f);
     static XMFLOAT3 entityPos = XMFLOAT3(0.0f, 0.0f, 100.0f); // second entity "[1]", the first one is static
     static bool isEditing = false;
     
@@ -410,10 +375,8 @@ void Graphics::RenderFrame(void)
         _fpsTimer.Restart();
     }
 
-    // Start ImGui frame
-    ImGui_ImplDX11_NewFrame();
-    ImGui_ImplWin32_NewFrame();
-    ImGui::NewFrame();
+    // Start ImGui
+    _imgui->BeginRender();
     {
         // ImGui::SetNextWindowSize(ImVec2(500, 200));
         ImGui::Begin("Window");
@@ -445,9 +408,7 @@ void Graphics::RenderFrame(void)
 
         } ImGui::End();           
     }
-
-    ImGui::Render();
-    ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+    _imgui->EndRender();    
 
     // Font Render
     _spriteBatch->Begin();
@@ -460,6 +421,8 @@ void Graphics::RenderFrame(void)
 
 void Graphics::CleanD3D(void)
 {
+    _imgui->ShutDown();
+
     _swapchain->SetFullscreenState(FALSE, NULL);    // switch to windowed mode
 
     // close and release all existing COM objects

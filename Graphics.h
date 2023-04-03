@@ -15,9 +15,7 @@
 #include <SpriteBatch.h>
 #include <SpriteFont.h>
 #include "Timer.h"
-#include "ImGui/imgui.h"
-#include "ImGui/imgui_impl_win32.h"
-#include "ImGui/imgui_impl_dx11.h"
+#include "ImGuiWindow.h"
 #include "Camera.h"
 #include "Entity.h"
 
@@ -26,9 +24,9 @@ class Graphics
 public:
 	bool Initialize(HWND hWnd, int width, int height);
 	bool InitD3D11(HWND hWnd);							// sets up and initializes Direct3D
+	bool InitImGui(HWND hWnd);									// initialize imgui window
 	bool InitPipeline(void);							// loads and prepares pipeline
 	bool InitGraphicsD3D11(void);						// creates the shape to render
-	bool InitImGui(HWND hWnd);
 	void CleanD3D(void);								// closes Direct3D and releases memory
 	void RenderFrame(void);								// renders a single frame
 
@@ -58,6 +56,7 @@ private:
 	ID3D11ShaderResourceView* _imageShaderResourceView;
 
 	Timer _fpsTimer;
+	ImGuiWindow* _imgui;
 
 	int _wWidth;
 	int _wHeight;

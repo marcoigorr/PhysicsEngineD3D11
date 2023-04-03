@@ -5,10 +5,10 @@ bool Engine::Initialize(HINSTANCE hInstance, std::string window_title, std::stri
 {
 	_timer.Start();
 
-	if (!this->render_window.CreateWnd(hInstance, window_title, window_class, width, height))
+	if (!this->_renderWindow.CreateWnd(hInstance, window_title, window_class, width, height))
 		return false;
 
-	if (!this->gfx.Initialize(render_window.GetHWND(), width, height))
+	if (!this->_gfx.Initialize(_renderWindow.GetHWND(), width, height))
 		return false;
 
 	return true;
@@ -16,20 +16,20 @@ bool Engine::Initialize(HINSTANCE hInstance, std::string window_title, std::stri
 
 void Engine::CleanD3D()
 {
-	this->gfx.CleanD3D();
+	this->_gfx.CleanD3D();
 }
 
 bool Engine::ProcessMessages()
 {
-	return this->render_window.ProcessMessages();
+	return this->_renderWindow.ProcessMessages();
 }
 
 void Engine::Update()
 {
 	float dt = _timer.GetMillisecondElapsed();
 
-	Entity* gravitySource = &gfx._entity[0];
-	Entity* particle = &gfx._entity[1];
+	Entity* gravitySource = &_gfx._entity[0];
+	Entity* particle = &_gfx._entity[1];
 
 	float gravityStrength = -0.05f;
 
@@ -63,5 +63,5 @@ void Engine::Update()
 
 void Engine::RenderFrame()
 {
-	this->gfx.RenderFrame();
+	this->_gfx.RenderFrame();
 }
