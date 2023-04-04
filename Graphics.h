@@ -18,6 +18,7 @@
 #include "ImGuiWindow.h"
 #include "Camera.h"
 #include "Entity.h"
+#include <deque>
 
 class Graphics
 {
@@ -63,5 +64,6 @@ private:
 
 public:
 	Camera _camera;
-	Entity _entity[2];
+	Entity _gravitySource;
+	std::deque<Entity*> _particles;
 };
