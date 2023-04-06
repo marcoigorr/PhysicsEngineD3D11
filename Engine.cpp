@@ -35,7 +35,7 @@ bool Engine::Update()
 	}*/
 
 	static Entity* gravitySource = &_gfx._gravitySource;
-	static float gravityStrength = -0.001f;
+	static float gravityStrength = -0.3f;
 
 	for (int i = 0; i < ARRAYSIZE(_gfx._particles); i++)
 	{
@@ -53,9 +53,8 @@ bool Engine::Update()
 		float inverseSquareDropoff = inverseDistance * inverseDistance;
 		float xAccelleration = xNormalized * gravityStrength * inverseSquareDropoff;
 		float yAccelleration = yNormalized * gravityStrength * inverseSquareDropoff;
-
-		_gfx._particles[i]->_xVelocity += xAccelleration * dt;
-		_gfx._particles[i]->_yVelocity += yAccelleration * dt;
+		
+		_gfx._particles[i]->UpdateVelocity(xAccelleration * dt, yAccelleration * dt);
 
 		// Collision
 

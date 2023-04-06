@@ -1,7 +1,6 @@
 #include "Entity.h"
 
 bool Entity::Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceContext, ID3D11ShaderResourceView* texture, ConstantBuffer<CB_VS_vertexshader>& cb_vs_vertexshader, ConstantBuffer<CB_PS_pixelshader>& cb_ps_pixelshader)
-
 {
 	_dev = device;
 	_devcon = deviceContext;
@@ -46,11 +45,10 @@ bool Entity::Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceContext
 	return true;
 }
 
-void Entity::SetParameters(float initialXVelocity, float initialYVelocity, float mass)
+void Entity::UpdateVelocity(float newXVelocity, float newYVelocity)
 {
-    _xVelocity = initialYVelocity;
-    _yVelocity = initialYVelocity;
-    _mass = mass;
+    _velocity.x += newXVelocity;
+    _velocity.y += newYVelocity;
 }
 
 void Entity::SetTexture(ID3D11ShaderResourceView* texture)
@@ -146,5 +144,22 @@ void Entity::AdjustPosition(float x, float y, float z)
 
 void Entity::AdjustPosition()
 {
-    this->AdjustPosition(_xVelocity, _yVelocity, 0.0f);
+    this->AdjustPosition(_velocity.x, _velocity.y, 0.0f);
+}
+
+const XMFLOAT2& Entity::GetVelocityFloat2() const
+{
+    return _velocity;
+}
+
+void Entity::SetVelocity(const XMFLOAT2& velocity)
+{
+    _velocity.x = velocity.x;
+    _velocity.y = velocity.y;
+}
+
+void Entity::SetVelocity(float x, float y)
+{
+    _velocity.x = x;
+    _velocity.y = y;
 }
