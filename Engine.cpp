@@ -37,14 +37,15 @@ bool Engine::Update()
 	static Entity* gravitySource = &_gfx._gravitySource;
 	static float xVelocity = 0.03f;
 	static float yVelocity;
-	float gravityStrength = -0.015f;
+	static float gravityStrength = -0.035f;
 
-	for (int i = 0; i < _gfx._particles.size(); i++)
+	XMFLOAT3 gravitySourceFloat3 = gravitySource->GetPositionFloat3();
+	for (Entity* particle : _gfx._particles)
 	{
-		XMVECTOR gravitySourceVec = gravitySource->GetPositionVector();
-		XMFLOAT3 gravitySourceFloat3 = gravitySource->GetPositionFloat3();
-		XMVECTOR particleVec = _gfx._particles[i]->GetPositionVector();
-		XMFLOAT3 particleFloat3 = _gfx._particles[i]->GetPositionFloat3();
+		if (particle->isBeingEdited)
+			continue;
+
+		XMFLOAT3 particleFloat3 = particle->GetPositionFloat3();
 
 		float xDistance = particleFloat3.x - gravitySourceFloat3.x;
 		float yDistance = particleFloat3.y - gravitySourceFloat3.y;
@@ -61,8 +62,9 @@ bool Engine::Update()
 		xVelocity += xAccelleration * dt;
 		yVelocity += yAccelleration * dt;
 
-		_gfx._particles[i]->AdjustPosition(XMFLOAT3(xVelocity, yVelocity, 0.0f));
+		particle->AdjustPosition(XMFLOAT3(xVelocity, yVelocity, 0.0f));
 	}
+	
 
 	_timer.Restart();
 	return true;

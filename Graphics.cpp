@@ -292,7 +292,7 @@ bool Graphics::InitGraphicsD3D11(void)
     HRESULT hr;     
 
     // Load image and create texture
-    hr = D3DX11CreateShaderResourceViewFromFile(_dev, L"Data\\Textures\\particle.png", NULL, NULL, &_imageShaderResourceView, NULL);
+    hr = D3DX11CreateShaderResourceViewFromFile(_dev, L"Data\\Textures\\circle_07.png", NULL, NULL, &_imageShaderResourceView, NULL);
     if (FAILED(hr))
     {
         ErrorLogger::Log(hr, "Failed to create texture from file.");
@@ -314,8 +314,8 @@ bool Graphics::InitGraphicsD3D11(void)
         return false;
     }
 
-    // Create orbitating entities
-    for (int i = 0; i < 10; i++)
+    // Create orbiting entities
+    for (int i = 0; i < 1; i++)
     {
         Entity* newParticle = new Entity();
         _particles.push_back(newParticle);
@@ -335,7 +335,7 @@ bool Graphics::InitGraphicsD3D11(void)
     return true;
 }
 
-void Graphics::RenderFrame(void)
+void Graphics::RenderFrame(void) 
 {
     // Clear the back buffer to a color
     _devcon->ClearRenderTargetView(_backbuffer, D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f));
@@ -362,14 +362,15 @@ void Graphics::RenderFrame(void)
     _camera.SetPosition(cameraPos);
     _gravitySource.SetPosition(sourcePos);
 
+    _gravitySource.Draw(_camera.GetViewMatrix() * _camera.GetProjectionMatrix());
+
     for (int i = 0; i < _particles.size(); i++)
     {
-        /*if (!_entity[1].isBeingEdited)
-            entityPos = _entity[1].GetPositionFloat3();
+        if (_particles[i]->isBeingEdited)
+            _particles[i]->SetPosition(entityPos);
         else
-            _entity[1].SetPosition(entityPos);*/
+			entityPos = _particles[i]->GetPositionFloat3();
 
-        _gravitySource.Draw(_camera.GetViewMatrix() * _camera.GetProjectionMatrix());
         _particles[i]->Draw(_camera.GetViewMatrix() * _camera.GetProjectionMatrix());
     }        
     
@@ -411,7 +412,7 @@ void Graphics::RenderFrame(void)
     {
         for (int i = 0; i < _particles.size(); i++)
         {
-            entityPos = _particles[i]->GetPositionFloat3();
+            ImGui::Checkbox("Edit Position", &_particles[i]->isBeingEdited);
             static float* entv[3] = { &entityPos.x, &entityPos.y, &entityPos.z };
             ImGui::DragFloat3("Entity Position (x, y, z)", *entv, 0.1f);
         }        
