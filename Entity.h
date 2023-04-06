@@ -11,6 +11,7 @@ class Entity
 {
 public:
 	bool Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceContext, ID3D11ShaderResourceView* texture, ConstantBuffer<CB_VS_vertexshader>& cb_vs_vertexshader, ConstantBuffer<CB_PS_pixelshader>& cb_ps_pixelshader);
+	void SetParameters(float initialXVelocity, float initialYVelocity, float mass);
 	void SetTexture(ID3D11ShaderResourceView* texture);
 	void Draw(const XMMATRIX& viewProjectionMatrix);
 	void Release();
@@ -18,14 +19,18 @@ public:
 	const XMVECTOR& GetPositionVector() const;
 	const XMFLOAT3& GetPositionFloat3() const;
 
-	void SetPosition(const XMVECTOR& pos);
+ 	void SetPosition(const XMVECTOR& pos);
 	void SetPosition(const XMFLOAT3& pos);
 	void SetPosition(float x, float y, float z);
 	void AdjustPosition(const XMVECTOR& pos);
 	void AdjustPosition(const XMFLOAT3& pos);
 	void AdjustPosition(float x, float y, float z);
+	void AdjustPosition();
 
-	bool isBeingEdited = false;
+	bool _isBeingEdited = false;
+	float _xVelocity;
+	float _yVelocity;
+	float _mass;
 
 private:
 	void UpdateWorldMatrix();

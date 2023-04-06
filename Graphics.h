@@ -65,5 +65,5 @@ private:
 public:
 	Camera _camera;
 	Entity _gravitySource;
-	std::deque<Entity*> _particles;
+	Entity* _particles[2];
 };

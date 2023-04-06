@@ -1,6 +1,7 @@
 #include "Entity.h"
 
 bool Entity::Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceContext, ID3D11ShaderResourceView* texture, ConstantBuffer<CB_VS_vertexshader>& cb_vs_vertexshader, ConstantBuffer<CB_PS_pixelshader>& cb_ps_pixelshader)
+
 {
 	_dev = device;
 	_devcon = deviceContext;
@@ -43,6 +44,13 @@ bool Entity::Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceContext
     this->SetPosition(0.0f, 0.0f, 100.0f);
 	this->UpdateWorldMatrix();
 	return true;
+}
+
+void Entity::SetParameters(float initialXVelocity, float initialYVelocity, float mass)
+{
+    _xVelocity = initialYVelocity;
+    _yVelocity = initialYVelocity;
+    _mass = mass;
 }
 
 void Entity::SetTexture(ID3D11ShaderResourceView* texture)
@@ -134,4 +142,9 @@ void Entity::AdjustPosition(float x, float y, float z)
     _pos.z += z;
     _posVector += XMLoadFloat3(&_pos);
     this->UpdateWorldMatrix();
+}
+
+void Entity::AdjustPosition()
+{
+    this->AdjustPosition(_xVelocity, _yVelocity, 0.0f);
 }

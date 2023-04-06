@@ -315,20 +315,23 @@ bool Graphics::InitGraphicsD3D11(void)
     }
 
     // Create orbiting entities
-    for (int i = 0; i < 1; i++)
+    for (int i = 0; i < ARRAYSIZE(_particles); i++)
     {
         Entity* newParticle = new Entity();
-        _particles.push_back(newParticle);
+        _particles[i] = newParticle;
     }
 
-    for (int i = 0; i < _particles.size(); i++)
+    for (int i = 0; i < ARRAYSIZE(_particles); i++)
     {
         _particles[i]->Initialize(_dev, _devcon, _imageShaderResourceView, _cb_vs_vertexshader, _cb_ps_pixelshader);
         _particles[i]->SetPosition(20.0f, 20.0f, 100.0f);
     }
+    _particles[0]->SetParameters(100.36f, 0.0f, 0.0f);
+    _particles[1]->SetParameters(-100.31f, 0.0f, 0.0f);
 
     // Create gravity source
     _gravitySource.Initialize(_dev, _devcon, _imageShaderResourceView, _cb_vs_vertexshader, _cb_ps_pixelshader);
+    _gravitySource.SetParameters(0.0f, 0.0f, 0.0f); // not being used
 
     _camera.SetProjectionValues(90.0f, static_cast<float>(_wWidth) / static_cast<float>(_wHeight), 0.1f, 1000.0f);
 
@@ -355,21 +358,19 @@ void Graphics::RenderFrame(void)
     _devcon->PSSetShader(_pPS, nullptr, 0);
 
     // Entity draw
+    constexpr int nParticles = ARRAYSIZE(_particles);
     static XMFLOAT3 cameraPos;
-    static XMFLOAT3 entityPos;
+    static XMFLOAT3 entityPos[nParticles];
     static XMFLOAT3 sourcePos {0.0f,0.0f,100.0f};
     
     _camera.SetPosition(cameraPos);
-    _gravitySource.SetPosition(sourcePos);
 
+    _gravitySource.SetPosition(sourcePos);
     _gravitySource.Draw(_camera.GetViewMatrix() * _camera.GetProjectionMatrix());
 
-    for (int i = 0; i < _particles.size(); i++)
+    for (int i = 0; i < nParticles; i++)
     {
-        if (_particles[i]->isBeingEdited)
-            _particles[i]->SetPosition(entityPos);
-        else
-			entityPos = _particles[i]->GetPositionFloat3();
+    	entityPos[i] = _particles[i]->GetPositionFloat3();
 
         _particles[i]->Draw(_camera.GetViewMatrix() * _camera.GetProjectionMatrix());
     }        
@@ -387,36 +388,40 @@ void Graphics::RenderFrame(void)
 
     // Start ImGui
     _imgui->BeginRender();
-    ImGui::Begin("Camera");
     {
-        //ImGui::Text(fpsString.c_str());
-        static float* camv[3] = { &cameraPos.x, &cameraPos.y, &cameraPos.z };
-        ImGui::DragFloat3("Camera Position (x, y, z)", *camv, 0.1f);
-        if (ImGui::Button("RESET POSITION", { 110.0f,20.0f }))
+        
+        ImGui::Begin("Camera");
         {
-            cameraPos = XMFLOAT3(0.0f, 0.0f, 0.0f);
-        }
-    } ImGui::End();
+            //ImGui::Text(fpsString.c_str());
+            static float* camv[3] = { &cameraPos.x, &cameraPos.y, &cameraPos.z };
+            ImGui::DragFloat3("Camera Position (x, y, z)", *camv, 0.1f);
+            if (ImGui::Button("RESET POSITION", { 110.0f,20.0f }))
+            {
+                cameraPos = XMFLOAT3(0.0f, 0.0f, 0.0f);
+            }
+        } ImGui::End();
 
-    ImGui::Begin("Gravity Source");
-    {
-		static float* srcv[3] = { &sourcePos.x, &sourcePos.y, &sourcePos.z };
-		ImGui::DragFloat3("GravitySource Position (x, y, z)", *srcv, 0.1f);
-        if (ImGui::Button("RESET POSITION", { 110.0f,20.0f }))
+        ImGui::Begin("Gravity Source");
         {
-            sourcePos = XMFLOAT3(0.0f, 0.0f, 100.0f);
-        }
-    } ImGui::End();
+            static float* srcv[3] = { &sourcePos.x, &sourcePos.y, &sourcePos.z };
+            ImGui::DragFloat3("GravitySource Position (x, y, z)", *srcv, 0.1f);
+            if (ImGui::Button("RESET POSITION", { 110.0f,20.0f }))
+            {
+                sourcePos = XMFLOAT3(0.0f, 0.0f, 100.0f);
+            }
+        } ImGui::End();
 
-    ImGui::Begin("Particles");
-    {
-        for (int i = 0; i < _particles.size(); i++)
+        ImGui::Begin("Particles");
         {
-            ImGui::Checkbox("Edit Position", &_particles[i]->isBeingEdited);
-            static float* entv[3] = { &entityPos.x, &entityPos.y, &entityPos.z };
-            ImGui::DragFloat3("Entity Position (x, y, z)", *entv, 0.1f);
-        }        
-    } ImGui::End();
+            for (int i = 0; i < nParticles; i++)
+            {
+            	float* entv[3] = { &entityPos[i].x, &entityPos[i].y, &entityPos[i].z };
+                ImGui::DragFloat3("Entity Position", *entv, 0.1f);
+                ImGui::Spacing();
+            }
+
+        } ImGui::End();
+    }
     _imgui->EndRender();    
 
     // Font Render
@@ -436,7 +441,8 @@ void Graphics::CleanD3D(void)
 
     // close and release all existing COM objects
     if (_imageShaderResourceView) _imageShaderResourceView->Release();
-    for (int i = 0; i < _particles.size(); i++)
+    _gravitySource.Release();
+    for (int i = 0; i < ARRAYSIZE(_particles); i++)
     {
         _particles[i]->Release();
     }
