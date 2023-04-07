@@ -371,7 +371,8 @@ void Graphics::RenderFrame(void)
 
     for (int i = 0; i < nParticles; i++)
     {
-    	entityPos[i] = _particles[i]->GetPositionFloat3();
+        if (!_editing)
+            entityPos[i] = _particles[i]->GetPositionFloat3();
 
         _particles[i]->Draw(_camera.GetViewMatrix() * _camera.GetProjectionMatrix());
     }        
@@ -389,13 +390,12 @@ void Graphics::RenderFrame(void)
 
     // Start ImGui
     _imgui->BeginRender();
-    {
-        
+    {        
         ImGui::Begin("Camera");
         {
             //ImGui::Text(fpsString.c_str());
             static float* camv[3] = { &cameraPos.x, &cameraPos.y, &cameraPos.z };
-            ImGui::DragFloat3("Camera Position (x, y, z)", *camv, 0.1f);
+            ImGui::DragFloat3("Position (x, y, z)", *camv, 0.1f);
             if (ImGui::Button("RESET POSITION", { 110.0f,20.0f }))
             {
                 cameraPos = XMFLOAT3(0.0f, 0.0f, 0.0f);
@@ -405,7 +405,7 @@ void Graphics::RenderFrame(void)
         ImGui::Begin("Gravity Source");
         {
             static float* srcv[3] = { &sourcePos.x, &sourcePos.y, &sourcePos.z };
-            ImGui::DragFloat3("GravitySource Position (x, y, z)", *srcv, 0.1f);
+            ImGui::DragFloat3("Position (x, y, z)", *srcv, 0.1f);
             if (ImGui::Button("RESET POSITION", { 110.0f,20.0f }))
             {
                 sourcePos = XMFLOAT3(0.0f, 0.0f, 100.0f);
@@ -414,10 +414,12 @@ void Graphics::RenderFrame(void)
 
         ImGui::Begin("Particles");
         {
-            for (int i = 0; i < nParticles; i++)
+            ImGui::Checkbox("Edit mode", &_editing);
+            ImGui::Spacing();
+        	for (int i = 0; i < nParticles; i++)
             {
-            	float* entv[3] = { &entityPos[i].x, &entityPos[i].y, &entityPos[i].z };
-                ImGui::DragFloat3("Entity Position", *entv, 0.1f);
+                std::string label = "Entity " + std::to_string(i) + " -> x: " + std::to_string(entityPos[i].x) + " y: " + std::to_string(entityPos[i].y) + " z: " + std::to_string(entityPos[i].z);
+                ImGui::Text(label.c_str());
                 ImGui::Spacing();
             }
 
@@ -438,14 +440,14 @@ void Graphics::CleanD3D(void)
 {
     _imgui->ShutDown();
 
-    _swapchain->SetFullscreenState(FALSE, NULL);    // switch to windowed mode
+    _swapchain->SetFullscreenState(FALSE, NULL);  // switch to windowed mode
 
-    // close and release all existing COM objects
+    // Close and release all existing COM objects
     if (_imageShaderResourceView) _imageShaderResourceView->Release();
-    _gravitySource.Release();
+    if (&_gravitySource) _gravitySource.Release();
     for (int i = 0; i < ARRAYSIZE(_particles); i++)
     {
-        _particles[i]->Release();
+        if (_particles[i]) _particles[i]->Release();
     }
     if (_spriteBatch) _spriteBatch.release();
     if (_spriteFont) _spriteFont.release();

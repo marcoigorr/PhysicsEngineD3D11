@@ -28,11 +28,11 @@ bool Engine::Update()
 {
 	float dt = _timer.GetMillisecondElapsed();
 
-	/*if (_gfx._particles->isBeingEdited)
+	if (_gfx._editing)
 	{
 		_timer.Restart();
 		return true;
-	}*/
+	}
 
 	static Entity* gravitySource = &_gfx._gravitySource;
 	static float gravityStrength = -0.3f;

@@ -66,4 +66,6 @@ public:
 	Camera _camera;
 	Entity _gravitySource;
 	Entity* _particles[2];
+
+	bool _editing = false;
 };

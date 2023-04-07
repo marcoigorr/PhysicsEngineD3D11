@@ -50,7 +50,6 @@ private:
 	XMVECTOR _posVector;
 	XMFLOAT3 _pos;
 
-	bool _isBeingEdited = false;
 	XMFLOAT2 _velocity;
 	float _mass = 0.0f;
 
