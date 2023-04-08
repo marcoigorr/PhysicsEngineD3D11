@@ -37,10 +37,12 @@ bool Engine::Update()
 	static Entity* gravitySource = &_gfx._gravitySource;
 	static float gravityStrength = -0.3f;
 
-	for (int i = 0; i < ARRAYSIZE(_gfx._particles); i++)
+	for (int i = 0; i < _gfx._particles.size(); i++)
 	{
+		Entity& particle = *_gfx._particles[i];
+
 		XMFLOAT3 gravitySourceFloat3 = gravitySource->GetPositionFloat3();
-		XMFLOAT3 particleFloat3 = _gfx._particles[i]->GetPositionFloat3();
+		XMFLOAT3 particleFloat3 = particle.GetPositionFloat3();
 
 		float xDistance = particleFloat3.x - gravitySourceFloat3.x;
 		float yDistance = particleFloat3.y - gravitySourceFloat3.y;
@@ -54,11 +56,15 @@ bool Engine::Update()
 		float xAccelleration = xNormalized * gravityStrength * inverseSquareDropoff;
 		float yAccelleration = yNormalized * gravityStrength * inverseSquareDropoff;
 		
-		_gfx._particles[i]->UpdateVelocity(xAccelleration * dt, yAccelleration * dt);
+		particle.UpdateVelocity(xAccelleration * dt, yAccelleration * dt);
 
-		// Collision
-
-		_gfx._particles[i]->AdjustPosition();
+		// Collision if the distance between objs <= sum of their radii
+		if (distance <= gravitySource->GetRadius() + particle.GetRadius())
+		{
+			_gfx._particles.erase(_gfx._particles.begin() + i);
+		}
+		else 
+			particle.AdjustPosition();
 	}
 
 	_timer.Restart();

@@ -314,14 +314,16 @@ bool Graphics::InitGraphicsD3D11(void)
         return false;
     }
 
+    int entities = 3;
+
     // Create orbiting entities
-    for (int i = 0; i < ARRAYSIZE(_particles); i++)
+    for (int i = 0; i < entities; i++)
     {
         Entity* newParticle = new Entity();
-        _particles[i] = newParticle;
+        _particles.push_back(newParticle);
     }
 
-    for (int i = 0; i < ARRAYSIZE(_particles); i++)
+    for (int i = 0; i < entities; i++)
     {
         _particles[i]->Create(0.5f, 100.0f, _imageShaderResourceView, XMFLOAT3(20.0f - i * 2, 20.0f + i * 2, 100.0f), XMFLOAT2(0.3f, 0.0f));
         _particles[i]->Initialize(_dev, _devcon, _cb_vs_vertexshader, _cb_ps_pixelshader);
@@ -356,9 +358,9 @@ void Graphics::RenderFrame(void)
     _devcon->PSSetShader(_pPS, nullptr, 0);
 
     // Entity draw
-    constexpr int nParticles = ARRAYSIZE(_particles);
+    const int nParticles = _particles.size();
     static XMFLOAT3 cameraPos;
-    static XMFLOAT3 entityPos[nParticles];
+    static XMFLOAT3 entityPos[3];
     static XMFLOAT3 sourcePos {0.0f,0.0f,100.0f};
     
     _camera.SetPosition(cameraPos);
@@ -442,7 +444,7 @@ void Graphics::CleanD3D(void)
     // Close and release all existing COM objects
     if (_imageShaderResourceView) _imageShaderResourceView->Release();
     if (&_gravitySource) _gravitySource.Release();
-    for (int i = 0; i < ARRAYSIZE(_particles); i++)
+    for (int i = 0; i < _particles.size(); i++)
     {
         if (_particles[i]) _particles[i]->Release();
     }

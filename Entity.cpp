@@ -167,7 +167,7 @@ void Entity::SetVelocity(float x, float y)
     _velocity.y = y;
 }
 
-float Entity::GetRaius() const
+float Entity::GetRadius() const
 {
     return _radius;
 }

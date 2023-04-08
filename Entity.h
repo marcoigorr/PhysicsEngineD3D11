@@ -33,7 +33,7 @@ public:
 	void SetVelocity(const XMFLOAT2& velocity);
 	void SetVelocity(float x, float y);
 
-	float GetRaius() const;
+	float GetRadius() const;
 
 	void SetRadius(float radius);
 	void UpdateRadius(float radius);
