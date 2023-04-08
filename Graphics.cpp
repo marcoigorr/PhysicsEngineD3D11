@@ -321,18 +321,15 @@ bool Graphics::InitGraphicsD3D11(void)
         _particles[i] = newParticle;
     }
 
-    //srand(clock());
     for (int i = 0; i < ARRAYSIZE(_particles); i++)
     {
-        //float random = rand()%1;
-        _particles[i]->Initialize(_dev, _devcon, _imageShaderResourceView, _cb_vs_vertexshader, _cb_ps_pixelshader);
-        _particles[i]->SetPosition(20.0f - i * 15.0f, 20.0f, 100.0f);
-        _particles[i]->SetVelocity(0.3f, 0.0f);
+        _particles[i]->Create(0.5f, 100.0f, _imageShaderResourceView, XMFLOAT3(20.0f - i * 2, 20.0f + i * 2, 100.0f), XMFLOAT2(0.3f, 0.0f));
+        _particles[i]->Initialize(_dev, _devcon, _cb_vs_vertexshader, _cb_ps_pixelshader);
     }
 
     // Create gravity source
-    _gravitySource.Initialize(_dev, _devcon, _imageShaderResourceView, _cb_vs_vertexshader, _cb_ps_pixelshader);
-    _gravitySource.SetVelocity(0.0f, 0.0f);
+    _gravitySource.Create(1.0f, 1000.0f, _imageShaderResourceView, XMFLOAT3(0.0f, 0.0f, 100.0f), XMFLOAT2(0.0f, 0.0f));
+    _gravitySource.Initialize(_dev, _devcon, _cb_vs_vertexshader, _cb_ps_pixelshader);
 
     _camera.SetProjectionValues(90.0f, static_cast<float>(_wWidth) / static_cast<float>(_wHeight), 0.1f, 1000.0f);
 
