@@ -314,7 +314,7 @@ bool Graphics::InitGraphicsD3D11(void)
         return false;
     }
 
-    int entities = 3;
+    int entities = 50;
 
     // Create orbiting entities
     for (int i = 0; i < entities; i++)
@@ -325,7 +325,7 @@ bool Graphics::InitGraphicsD3D11(void)
 
     for (int i = 0; i < entities; i++)
     {
-        _particles[i]->Create(0.5f, 100.0f, _imageShaderResourceView, XMFLOAT3(20.0f - i * 2, 20.0f + i * 2, 100.0f), XMFLOAT2(0.3f, 0.0f));
+        _particles[i]->Create(0.5f, 100.0f, _imageShaderResourceView, XMFLOAT3(20.0f - i * 0.5f, 20.0f + i * 0.5f, 100.0f), XMFLOAT2(0.3f, 0.0f));
         _particles[i]->Initialize(_dev, _devcon, _cb_vs_vertexshader, _cb_ps_pixelshader);
     }
 
@@ -358,9 +358,8 @@ void Graphics::RenderFrame(void)
     _devcon->PSSetShader(_pPS, nullptr, 0);
 
     // Entity draw
-    const int nParticles = _particles.size();
+    int nParticles = _particles.size();
     static XMFLOAT3 cameraPos;
-    static XMFLOAT3 entityPos[3];
     static XMFLOAT3 sourcePos {0.0f,0.0f,100.0f};
     
     _camera.SetPosition(cameraPos);
@@ -370,9 +369,6 @@ void Graphics::RenderFrame(void)
 
     for (int i = 0; i < nParticles; i++)
     {
-        if (!_editing)
-            entityPos[i] = _particles[i]->GetPositionFloat3();
-
         _particles[i]->Draw(_camera.GetViewMatrix() * _camera.GetProjectionMatrix());
     }        
     
@@ -392,7 +388,6 @@ void Graphics::RenderFrame(void)
     {        
         ImGui::Begin("Camera");
         {
-            //ImGui::Text(fpsString.c_str());
             static float* camv[3] = { &cameraPos.x, &cameraPos.y, &cameraPos.z };
             ImGui::DragFloat3("Position (x, y, z)", *camv, 0.1f);
             if (ImGui::Button("RESET POSITION", { 110.0f,20.0f }))
@@ -413,11 +408,17 @@ void Graphics::RenderFrame(void)
 
         ImGui::Begin("Particles");
         {
+            if (ImGui::Button("Delete All", { 100.0f,20.0f }) && nParticles != 0)
+            {
+	            _particles.clear();
+            	nParticles = 0;
+            }
             ImGui::Checkbox("Edit mode", &_editing);
             ImGui::Spacing();
         	for (int i = 0; i < nParticles; i++)
             {
-                std::string label = "Entity " + std::to_string(i) + " -> x: " + std::to_string(entityPos[i].x) + " y: " + std::to_string(entityPos[i].y) + " z: " + std::to_string(entityPos[i].z);
+                XMFLOAT3 particlePos = _particles[i]->GetPositionFloat3();
+                std::string label = "Entity " + std::to_string(i) + " -> x: " + std::to_string(particlePos.x) + " y: " + std::to_string(particlePos.y) + " z: " + std::to_string(particlePos.z);
                 ImGui::Text(label.c_str());
                 ImGui::Spacing();
             }

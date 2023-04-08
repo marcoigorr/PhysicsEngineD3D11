@@ -35,7 +35,7 @@ bool Engine::Update()
 	}
 
 	static Entity* gravitySource = &_gfx._gravitySource;
-	static float gravityStrength = -0.3f;
+	static float gravityStrength = -0.33f;
 
 	for (int i = 0; i < _gfx._particles.size(); i++)
 	{
@@ -60,9 +60,7 @@ bool Engine::Update()
 
 		// Collision if the distance between objs <= sum of their radii
 		if (distance <= gravitySource->GetRadius() + particle.GetRadius())
-		{
 			_gfx._particles.erase(_gfx._particles.begin() + i);
-		}
 		else 
 			particle.AdjustPosition();
 	}
