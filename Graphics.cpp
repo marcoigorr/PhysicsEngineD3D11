@@ -321,11 +321,8 @@ bool Graphics::InitGraphicsD3D11(void)
     {
         Entity* newParticle = new Entity();
         _particles.push_back(newParticle);
-    }
 
-    for (int i = 0; i < entities; i++)
-    {
-        _particles[i]->Create(0.5f, 100.0f, _imageShaderResourceView, XMFLOAT3(20.0f - i * 0.5f, 20.0f + i * 0.5f, 100.0f), XMFLOAT2(0.3f, 0.0f));
+        _particles[i]->Create(0.5f, 100.0f, _imageShaderResourceView, XMFLOAT3(20.0f - i * 0.45f, 20.0f + i * 0.45f, 100.0f), XMFLOAT2(0.3f, 0.0f));
         _particles[i]->Initialize(_dev, _devcon, _cb_vs_vertexshader, _cb_ps_pixelshader);
     }
 
