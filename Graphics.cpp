@@ -315,7 +315,7 @@ bool Graphics::InitGraphicsD3D11(void)
     }
 
     int entities = 500;
-    float spawnRange = 30.0f;
+    float spawnRange = 20.0f;
     srand(static_cast<unsigned>(time(0)));
 
     // Create orbiting entities
