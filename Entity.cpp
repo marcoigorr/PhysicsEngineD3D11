@@ -205,8 +205,8 @@ void Entity::Attract(Entity* entity, float dt)
     float yDistance = _pos.y - entityPos.y;
     float distance = sqrtf(xDistance * xDistance + yDistance * yDistance);
 
-    if (distance < 40.0f)
-        distance = 40.0f;
+    if (distance < 20.0f)
+        distance = 20.0f;
 
     float inverseDistance = 1.0f / distance;
     float xNormalized = xDistance * inverseDistance;
@@ -221,6 +221,33 @@ void Entity::Attract(Entity* entity, float dt)
 
     // Collision if the distance between objs <= sum of their radii
     // if (distance <= particle0->GetRadius() + particle1->GetRadius())
+
+    // DEBUG
+    static float max_xAcc = xAccelleration;
+    if (max_xAcc < xAccelleration)
+        max_xAcc = xAccelleration;
+
+    static float min_xAcc = xAccelleration;
+    if (min_xAcc > xAccelleration)
+        min_xAcc = xAccelleration;
+
+	static float max_yAcc = yAccelleration;
+    if (max_yAcc < yAccelleration)
+        max_yAcc = yAccelleration;
+
+    static float min_yAcc = yAccelleration;
+    if (min_yAcc > yAccelleration)
+        min_yAcc = yAccelleration;
+
+    static float max_force = attractionForce;
+    if (max_force < attractionForce)
+        max_force = attractionForce;
+
+    static float min_force = attractionForce;
+    if (min_force > attractionForce)
+        min_force = attractionForce;
+
+    // end DEBUG
 
     this->UpdateVelocity(xAccelleration, yAccelleration);
     this->AdjustPosition();
