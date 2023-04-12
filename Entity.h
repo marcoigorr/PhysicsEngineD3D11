@@ -43,6 +43,8 @@ public:
 	void SetMass(float mass);
 	void UpdateMass(float mass);
 
+	void Attract(Entity* entity, float dt);
+
 private:
 	void UpdateWorldMatrix();
 

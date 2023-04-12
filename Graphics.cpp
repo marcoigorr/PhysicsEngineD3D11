@@ -292,7 +292,7 @@ bool Graphics::InitGraphicsD3D11(void)
     HRESULT hr;     
 
     // Load image and create texture
-    hr = D3DX11CreateShaderResourceViewFromFile(_dev, L"Data\\Textures\\circle_07.png", NULL, NULL, &_imageShaderResourceView, NULL);
+    hr = D3DX11CreateShaderResourceViewFromFile(_dev, L"Data\\Textures\\particle.png", NULL, NULL, &_imageShaderResourceView, NULL);
     if (FAILED(hr))
     {
         ErrorLogger::Log(hr, "Failed to create texture from file.");
@@ -314,21 +314,28 @@ bool Graphics::InitGraphicsD3D11(void)
         return false;
     }
 
-    int entities = 50;
+    int entities = 2;
+    srand(clock());
 
     // Create orbiting entities
-    for (int i = 0; i < entities; i++)
+    /*for (int i = 0; i < entities; i++)
     {
         Entity* newParticle = new Entity();
+
+        newParticle->Create(0.5f, 100.0f, _imageShaderResourceView, XMFLOAT3(rand()%40, rand()%10, 100.0f), XMFLOAT2(0.3f * (-i), 0.0f));
+        newParticle->Initialize(_dev, _devcon, _cb_vs_vertexshader, _cb_ps_pixelshader);
+
         _particles.push_back(newParticle);
+    }*/
 
-        _particles[i]->Create(0.5f, 100.0f, _imageShaderResourceView, XMFLOAT3(20.0f - i * 0.45f, 20.0f + i * 0.45f, 100.0f), XMFLOAT2(0.3f, 0.0f));
-        _particles[i]->Initialize(_dev, _devcon, _cb_vs_vertexshader, _cb_ps_pixelshader);
-    }
-
-    // Create gravity source
-    _gravitySource.Create(1.0f, 1000.0f, _imageShaderResourceView, XMFLOAT3(0.0f, 0.0f, 100.0f), XMFLOAT2(0.0f, 0.0f));
-    _gravitySource.Initialize(_dev, _devcon, _cb_vs_vertexshader, _cb_ps_pixelshader);
+    Entity* newParticle = new Entity();
+    Entity* newParticle2 = new Entity();
+    newParticle->Create(0.5f, 12e4, _imageShaderResourceView, XMFLOAT3(20.0f, -10.0f, 100.0f), XMFLOAT2(0.3f, 0.0f));
+    newParticle->Initialize(_dev, _devcon, _cb_vs_vertexshader, _cb_ps_pixelshader);
+    _particles.push_back(newParticle);
+    newParticle2->Create(0.5f, 12e4, _imageShaderResourceView, XMFLOAT3(-20.0f, 10.0f, 100.0f), XMFLOAT2(-0.3f, 0.0f));
+    newParticle2->Initialize(_dev, _devcon, _cb_vs_vertexshader, _cb_ps_pixelshader);
+    _particles.push_back(newParticle2);
 
     _camera.SetProjectionValues(90.0f, static_cast<float>(_wWidth) / static_cast<float>(_wHeight), 0.1f, 1000.0f);
 
@@ -357,12 +364,8 @@ void Graphics::RenderFrame(void)
     // Entity draw
     int nParticles = _particles.size();
     static XMFLOAT3 cameraPos;
-    static XMFLOAT3 sourcePos {0.0f,0.0f,100.0f};
     
     _camera.SetPosition(cameraPos);
-
-    _gravitySource.SetPosition(sourcePos);
-    _gravitySource.Draw(_camera.GetViewMatrix() * _camera.GetProjectionMatrix());
 
     for (int i = 0; i < nParticles; i++)
     {
@@ -390,16 +393,6 @@ void Graphics::RenderFrame(void)
             if (ImGui::Button("RESET POSITION", { 110.0f,20.0f }))
             {
                 cameraPos = XMFLOAT3(0.0f, 0.0f, 0.0f);
-            }
-        } ImGui::End();
-
-        ImGui::Begin("Gravity Source");
-        {
-            static float* srcv[3] = { &sourcePos.x, &sourcePos.y, &sourcePos.z };
-            ImGui::DragFloat3("Position (x, y, z)", *srcv, 0.1f);
-            if (ImGui::Button("RESET POSITION", { 110.0f,20.0f }))
-            {
-                sourcePos = XMFLOAT3(0.0f, 0.0f, 100.0f);
             }
         } ImGui::End();
 
@@ -441,7 +434,6 @@ void Graphics::CleanD3D(void)
 
     // Close and release all existing COM objects
     if (_imageShaderResourceView) _imageShaderResourceView->Release();
-    if (&_gravitySource) _gravitySource.Release();
     for (int i = 0; i < _particles.size(); i++)
     {
         if (_particles[i]) _particles[i]->Release();

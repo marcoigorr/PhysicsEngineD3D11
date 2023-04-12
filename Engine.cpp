@@ -1,6 +1,8 @@
 #include "Engine.h"
 #include <cmath>
 
+#define BIG_G 6.673e-11
+
 bool Engine::Initialize(HINSTANCE hInstance, std::string window_title, std::string window_class, int width, int height)
 {
 	_timer.Start();
@@ -34,36 +36,11 @@ bool Engine::Update()
 		return true;
 	}
 
-	static Entity* gravitySource = &_gfx._gravitySource;
-	static float gravityStrength = -0.33f;
+	static Entity* particle0 = &*_gfx._particles[0];
+	static Entity* particle1 = &*_gfx._particles[1];
 
-	for (int i = 0; i < _gfx._particles.size(); i++)
-	{
-		Entity& particle = *_gfx._particles[i];
-
-		XMFLOAT3 gravitySourceFloat3 = gravitySource->GetPositionFloat3();
-		XMFLOAT3 particleFloat3 = particle.GetPositionFloat3();
-
-		float xDistance = particleFloat3.x - gravitySourceFloat3.x;
-		float yDistance = particleFloat3.y - gravitySourceFloat3.y;
-		float distance = sqrtf(xDistance * xDistance + yDistance * yDistance);
-
-		float inverseDistance = 1.0f / distance;
-		float xNormalized = xDistance * inverseDistance;
-		float yNormalized = yDistance * inverseDistance;
-
-		float inverseSquareDropoff = inverseDistance * inverseDistance;
-		float xAccelleration = xNormalized * gravityStrength * inverseSquareDropoff;
-		float yAccelleration = yNormalized * gravityStrength * inverseSquareDropoff;
-		
-		particle.UpdateVelocity(xAccelleration * dt, yAccelleration * dt);
-
-		// Collision if the distance between objs <= sum of their radii
-		if (distance <= gravitySource->GetRadius() + particle.GetRadius())
-			_gfx._particles.erase(_gfx._particles.begin() + i);
-		else 
-			particle.AdjustPosition();
-	}
+	particle0->Attract(particle1, dt);
+	particle1->Attract(particle0, dt);
 
 	_timer.Restart();
 	return true;

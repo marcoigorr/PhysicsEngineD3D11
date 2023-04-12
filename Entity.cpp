@@ -196,3 +196,32 @@ void Entity::UpdateMass(float mass)
 {
     _mass += mass;
 }
+
+void Entity::Attract(Entity* entity, float dt)
+{
+    XMFLOAT3 entityPos = entity->GetPositionFloat3();
+
+    float xDistance = _pos.x - entityPos.x;
+    float yDistance = _pos.y - entityPos.y;
+    float distance = sqrtf(xDistance * xDistance + yDistance * yDistance);
+
+    if (distance < 20.0f)
+        distance = 20.0f;
+
+    float inverseDistance = 1.0f / distance;
+    float xNormalized = xDistance * inverseDistance;
+    float yNormalized = yDistance * inverseDistance;
+
+    float inverseDistanceSq = inverseDistance * inverseDistance;
+
+    float attractionForce = -(6.673e-11) * (_mass * entity->GetMass()) * inverseDistanceSq;
+
+    float xAccelleration = xNormalized * attractionForce * dt;
+    float yAccelleration = yNormalized * attractionForce * dt;
+
+    // Collision if the distance between objs <= sum of their radii
+    // if (distance <= particle0->GetRadius() + particle1->GetRadius())
+
+    this->UpdateVelocity(xAccelleration, yAccelleration);
+    this->AdjustPosition();
+}

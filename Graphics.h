@@ -64,8 +64,7 @@ private:
 
 public:
 	Camera _camera;
-	Entity _gravitySource;
 	std::vector<Entity*> _particles;
 
-	bool _editing = false;
+	bool _editing = true;
 };
