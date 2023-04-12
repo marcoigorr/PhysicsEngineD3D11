@@ -36,11 +36,14 @@ bool Engine::Update()
 		return true;
 	}
 
-	static Entity* particle0 = &*_gfx._particles[0];
-	static Entity* particle1 = &*_gfx._particles[1];
-
-	particle0->Attract(particle1, dt);
-	particle1->Attract(particle0, dt);
+	for (int i = 0; i < _gfx._particles.size(); i++)
+	{
+		for (int j = 0; j < _gfx._particles.size(); j++)
+		{
+			if (i != j)
+				_gfx._particles[i]->Attract(_gfx._particles[j], dt);
+		}
+	}
 
 	_timer.Restart();
 	return true;

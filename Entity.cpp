@@ -205,8 +205,8 @@ void Entity::Attract(Entity* entity, float dt)
     float yDistance = _pos.y - entityPos.y;
     float distance = sqrtf(xDistance * xDistance + yDistance * yDistance);
 
-    if (distance < 20.0f)
-        distance = 20.0f;
+    if (distance < 40.0f)
+        distance = 40.0f;
 
     float inverseDistance = 1.0f / distance;
     float xNormalized = xDistance * inverseDistance;
