@@ -17,7 +17,7 @@
 #include "Timer.h"
 #include "ImGuiWindow.h"
 #include "Camera.h"
-#include "Entity.h"
+#include "QuadTree.h"
 #include <cstdlib>
 
 class Graphics
@@ -64,7 +64,8 @@ private:
 
 public:
 	Camera _camera;
-	std::vector<Entity*> _particles;
+	
+	QuadTree* _qt = new QuadTree();
 
 	bool _editing = true;
 };

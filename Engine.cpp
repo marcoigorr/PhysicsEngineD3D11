@@ -36,14 +36,16 @@ bool Engine::Update()
 		return true;
 	}
 
-	for (int i = 0; i < _gfx._particles.size(); i++)
+	/* N Squared order for gravity computation
+	 *
+	 *for (int i = 0; i < _gfx._particles.size(); i++)
 	{
 		for (int j = 0; j < _gfx._particles.size(); j++)
 		{
 			if (i != j)
 				_gfx._particles[i]->Attract(_gfx._particles[j], dt);
 		}
-	}
+	}*/
 
 	_timer.Restart();
 	return true;

@@ -314,11 +314,12 @@ bool Graphics::InitGraphicsD3D11(void)
         return false;
     }
 
-    int entities = 500;
-    float spawnRange = 20.0f;
+    // Create random orbiting entities
+    int entities = 10;
+    float spawnRange = 100.0f;
     srand(static_cast<unsigned>(time(0)));
 
-    // Create orbiting entities
+    _qt->SetBoundary({ 0.0f,0.0f,200.0f,200.0f });
     for (int i = 0; i < entities; i++)
     {
         float rVel = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
@@ -328,7 +329,7 @@ bool Graphics::InitGraphicsD3D11(void)
         Entity* newParticle = new Entity();
         newParticle->Create(0.5f, 10e2, _imageShaderResourceView, XMFLOAT3(rX, rY, 0.0f), XMFLOAT2(0.0f, 0.0f));
         newParticle->Initialize(_dev, _devcon, _cb_vs_vertexshader, _cb_ps_pixelshader);
-        _particles.push_back(newParticle);
+        _qt->Insert(newParticle);  // insert new particle in the QuadTree
     }
 
     _camera.SetProjectionValues(90.0f, static_cast<float>(_wWidth) / static_cast<float>(_wHeight), 0.1f, 1000.0f);
@@ -356,15 +357,10 @@ void Graphics::RenderFrame(void)
     _devcon->PSSetShader(_pPS, nullptr, 0);
 
     // Entity draw
-    int nParticles = _particles.size();
     static XMFLOAT3 cameraPos = {0.0f,0.0f,-200.0f};
-    
     _camera.SetPosition(cameraPos);
 
-    for (int i = 0; i < nParticles; i++)
-    {
-        _particles[i]->Draw(_camera.GetViewMatrix() * _camera.GetProjectionMatrix());
-    }        
+    _qt->Draw(_camera.GetViewMatrix() * _camera.GetProjectionMatrix());
     
     // Text / FPS
     static int fpsCount = 0;
@@ -389,25 +385,6 @@ void Graphics::RenderFrame(void)
                 cameraPos = XMFLOAT3(0.0f, 0.0f, -200.0f);
             }
         } ImGui::End();
-
-        ImGui::Begin("Particles");
-        {
-            if (ImGui::Button("Delete All", { 100.0f,20.0f }) && nParticles != 0)
-            {
-	            _particles.clear();
-            	nParticles = 0;
-            }
-            ImGui::Checkbox("Edit mode", &_editing);
-            ImGui::Spacing();
-        	for (int i = 0; i < nParticles; i++)
-            {
-                XMFLOAT3 particlePos = _particles[i]->GetPositionFloat3();
-                std::string label = "Entity " + std::to_string(i) + " -> x: " + std::to_string(particlePos.x) + " y: " + std::to_string(particlePos.y) + " z: " + std::to_string(particlePos.z);
-                ImGui::Text(label.c_str());
-                ImGui::Spacing();
-            }
-
-        } ImGui::End();
     }
     _imgui->EndRender();    
 
@@ -428,10 +405,7 @@ void Graphics::CleanD3D(void)
 
     // Close and release all existing COM objects
     if (_imageShaderResourceView) _imageShaderResourceView->Release();
-    for (int i = 0; i < _particles.size(); i++)
-    {
-        if (_particles[i]) _particles[i]->Release();
-    }
+    if (_qt) _qt->Release();
     if (_spriteBatch) _spriteBatch.release();
     if (_spriteFont) _spriteFont.release();
     if (_depthStencilState) _depthStencilState->Release();
