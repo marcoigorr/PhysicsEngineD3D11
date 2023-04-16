@@ -11,10 +11,10 @@ struct AABB
 	{
 		XMFLOAT3 pos = point->GetPositionFloat3();
 
-		return (pos.x > this->x - this->w &&
-				pos.x < this->x + this->w &&
-				pos.y > this->y - this->h &&
-				pos.y < this->y + this->h);
+		return (pos.x >= this->x - this->w &&
+				pos.x <= this->x + this->w &&
+				pos.y >= this->y - this->h &&
+				pos.y <= this->y + this->h);
 	}
 };
 
@@ -30,11 +30,16 @@ public:
 
 	void SetBoundary(AABB boundary);
 
+	void ComputeMassDistribution();
+
 private:
 	AABB _boundary;
 	bool _divided;
 	int _capacity;
+
 	std::vector<Entity*> _points;
+	XMFLOAT3 _centerOfMass;
+	float _mass;
 
 	QuadTree* _northeast = nullptr;
 	QuadTree* _northwest = nullptr;

@@ -24,27 +24,26 @@ void QuadTree::Insert(Entity* point)
 		if (!_divided)
 			this->Subdivide();
 
-		_northeast->Insert(point);
 		_northwest->Insert(point);
-		_southeast->Insert(point);
+		_northeast->Insert(point);
 		_southwest->Insert(point);
+		_southeast->Insert(point);
 	}
-
 }
 
 void QuadTree::Subdivide()
 {
-	AABB NE = { _boundary.x + _boundary.w / 2, _boundary.y - _boundary.h / 2, _boundary.w / 2, _boundary.h / 2 };
-	_northeast = new QuadTree(NE);
-
 	AABB NW = { _boundary.x - _boundary.w / 2, _boundary.y - _boundary.h / 2, _boundary.w / 2, _boundary.h / 2 };
 	_northwest = new QuadTree(NW);
 
-	AABB SE = { _boundary.x + _boundary.w / 2, _boundary.y + _boundary.h / 2, _boundary.w / 2, _boundary.h / 2 };
-	_southeast = new QuadTree(SE);
+	AABB NE = { _boundary.x + _boundary.w / 2, _boundary.y - _boundary.h / 2, _boundary.w / 2, _boundary.h / 2 };
+	_northeast = new QuadTree(NE);
 
 	AABB SW = { _boundary.x - _boundary.w / 2, _boundary.y + _boundary.h / 2, _boundary.w / 2, _boundary.h / 2 };
 	_southwest = new QuadTree(SW);
+
+	AABB SE = { _boundary.x + _boundary.w / 2, _boundary.y + _boundary.h / 2, _boundary.w / 2, _boundary.h / 2 };
+	_southeast = new QuadTree(SE);
 
 	_divided = true;
 }
@@ -56,10 +55,10 @@ void QuadTree::Draw(const XMMATRIX& viewProjectionMatrix)
 		p->Draw(viewProjectionMatrix);
 	}
 
-	if (_northeast) _northeast->Draw(viewProjectionMatrix);
 	if (_northwest) _northwest->Draw(viewProjectionMatrix);
-	if (_southeast) _southeast->Draw(viewProjectionMatrix);
+	if (_northeast) _northeast->Draw(viewProjectionMatrix);
 	if (_southwest) _southwest->Draw(viewProjectionMatrix);
+	if (_southeast) _southeast->Draw(viewProjectionMatrix);
 }
 
 void QuadTree::Release()
@@ -69,13 +68,35 @@ void QuadTree::Release()
 		p->Release();
 	}
 
-	if (_northeast) _northeast->Release();
 	if (_northwest) _northwest->Release();
-	if (_southeast) _southeast ->Release();
+	if (_northeast) _northeast->Release();
 	if (_southwest) _southwest->Release();
+	if (_southeast) _southeast->Release();
 }
 
 void QuadTree::SetBoundary(AABB boundary)
 {
 	_boundary = boundary;
 }
+
+void QuadTree::ComputeMassDistribution()
+{
+	// If number of particles in this node equals 1
+	if (_points.size() == 1)
+	{
+		_centerOfMass = _points[0]->GetPositionFloat3();
+		_mass = _points[0]->GetMass();
+	} else {
+
+		if (_divided)
+		{
+			_northwest->ComputeMassDistribution();
+			_northeast->ComputeMassDistribution();
+			_southwest->ComputeMassDistribution();
+			_southeast->ComputeMassDistribution();
+		}
+
+	}
+}
+
+
