@@ -211,17 +211,10 @@ void QuadTreeNode::DrawEntities(const XMMATRIX& viewProjectionMatrix)
 	if (_assignedEntity != nullptr)
 		_assignedEntity->Draw(viewProjectionMatrix);
 
-	if (_quadNode[0] != nullptr)
-		_quadNode[0]->DrawEntities(viewProjectionMatrix);
-	
-	if (_quadNode[1] != nullptr)
-		_quadNode[1]->DrawEntities(viewProjectionMatrix);
-	
-	if (_quadNode[2] != nullptr)
-		_quadNode[2]->DrawEntities(viewProjectionMatrix);
-	
-	if (_quadNode[3] != nullptr)
-		_quadNode[3]->DrawEntities(viewProjectionMatrix);
+	for (int i = 0; i < 4; i++)
+	{
+		_quadNode[i]->DrawEntities(viewProjectionMatrix);
+	}
 }
 
 void QuadTreeNode::ReleaseEntities()
@@ -229,9 +222,12 @@ void QuadTreeNode::ReleaseEntities()
 	if (_parent == nullptr)
 		_assignedEntity->Release();
 
+	if (_assignedEntity != nullptr)
+		_assignedEntity->Release();
+
 	for (int i = 0; i < 4; i++)
 	{
-		_quadNode[i]->_assignedEntity->Release();
+		_quadNode[i]->ReleaseEntities();
 	}
 }
 
