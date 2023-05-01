@@ -168,6 +168,52 @@ void QuadTreeNode::Insert(Entity* newParticle, int level)
 	_num++;
 }
 
+void QuadTreeNode::ComputeMassDistribution()
+{
+	if (_num == 1)
+	{
+		XMFLOAT3 pos = _assignedEntity->GetPositionFloat3();
+		_cm = XMFLOAT2(pos.x, pos.y);
+		_mass = _assignedEntity->GetMass();
+	}
+	else
+	{
+		// Compute the center of mass based on the masses of all child quadrants and the center of 
+		// mass as the center of mass of the child quadrants weightes with their mass
+			
+		_mass = 0.0f;
+		_cm = XMFLOAT2(0.0f, 0.0f);
+
+		for (int i = 0; i < 4; i++)
+		{
+			if (_quadNode[i])
+			{
+				_quadNode[i]->ComputeMassDistribution();
+				_mass += _quadNode[i]->_mass;
+				_cm.x += _quadNode[i]->_cm.x * _quadNode[i]->_mass;
+				_cm.y += _quadNode[i]->_cm.y * _quadNode[i]->_mass;
+			}
+		}
+		_cm.x /= _mass;
+		_cm.y /= _mass;
+	}
+}
+
+void QuadTreeNode::CalcForce(Entity* p1, Entity* p2) const
+{
+
+}
+
+void QuadTreeNode::CalcForce(const Entity* particle) const
+{
+	XMFLOAT2 acc;
+	if (_num == 1)
+	{
+		acc = CalcAcc(particle, _assignedEntity);
+	}
+
+}
+
 //void QuadTreeNode::Insert(Entity* point)
 //{
 //	if (!_boundingBox.Contains(point))

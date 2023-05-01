@@ -54,11 +54,14 @@ public:
 	void Insert(Entity* newParticle, int level);
 	//void Insert(Entity* point);
 	//void Subdivide();
+	void ComputeMassDistribution();
+	void CalcForce(Entity* p1, Entity* p2) const;
+	void CalcForce(const Entity* particle) const;
 
 	void DrawEntities(const XMMATRIX& viewProjectionMatrix);
 	void ReleaseEntities();
 
-	//void ComputeMassDistribution();
+	
 
 private:
 	Entity* _assignedEntity;

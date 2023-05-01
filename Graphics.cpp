@@ -292,7 +292,7 @@ bool Graphics::InitGraphicsD3D11(void)
     HRESULT hr;     
 
     // Load image and create texture
-    hr = D3DX11CreateShaderResourceViewFromFile(_dev, L"Data\\Textures\\particle.png", NULL, NULL, &_imageShaderResourceView, NULL);
+    hr = D3DX11CreateShaderResourceViewFromFile(_dev, L"Data\\Textures\\circle_05.png", NULL, NULL, &_imageShaderResourceView, NULL);
     if (FAILED(hr))
     {
         ErrorLogger::Log(hr, "Failed to create texture from file.");
