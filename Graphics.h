@@ -65,7 +65,7 @@ private:
 public:
 	Camera _camera;
 	
-	QuadTree* _qt = new QuadTree();
+	QuadTreeNode* _root = new QuadTreeNode(XMFLOAT2(-200.0f, 200.0f), XMFLOAT2(200.0f, -200.0f), nullptr);	// the root node of the barnes hut tree
 
 	bool _editing = true;
 };

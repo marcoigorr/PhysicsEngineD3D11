@@ -315,12 +315,11 @@ bool Graphics::InitGraphicsD3D11(void)
     }
 
     // Create random orbiting entities
-    int entities = 10;
-    float spawnRange = 100.0f;
+    int entities = 20;
+    float spawnRange = 50.0f;
     srand(static_cast<unsigned>(time(0)));
 
-    _qt->SetBoundary({ 0.0f,0.0f,200.0f,200.0f });
-    for (int i = 0; i < entities; i++)
+    /*for (int i = 0; i < entities; i++)
     {
         float rVel = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
         float rX = -spawnRange + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (spawnRange - (-spawnRange))));
@@ -328,9 +327,28 @@ bool Graphics::InitGraphicsD3D11(void)
 
         Entity* newParticle = new Entity();
         newParticle->Create(0.5f, 10e2, _imageShaderResourceView, XMFLOAT3(rX, rY, 0.0f), XMFLOAT2(0.0f, 0.0f));
-        newParticle->Initialize(_dev, _devcon, _cb_vs_vertexshader, _cb_ps_pixelshader);
-        _qt->Insert(newParticle);  // insert new particle in the QuadTree
-    }
+        newParticle->Initialize(_dev, _devcon, _cb_vs_vertexshader, _cb_ps_pixelshader); 
+
+        _root->Insert(newParticle, 0);
+    }*/
+
+    Entity* newParticle1 = new Entity();
+    newParticle1->Create(0.5f, 10e2, _imageShaderResourceView, XMFLOAT3(10.0f, -2.0f, 0.0f), XMFLOAT2(0.0f, 0.0f));
+    newParticle1->Initialize(_dev, _devcon, _cb_vs_vertexshader, _cb_ps_pixelshader);
+    Entity* newParticle2 = new Entity();
+    newParticle2->Create(0.5f, 10e2, _imageShaderResourceView, XMFLOAT3(1.0f, -1.0f, 0.0f), XMFLOAT2(0.0f, 0.0f));
+    newParticle2->Initialize(_dev, _devcon, _cb_vs_vertexshader, _cb_ps_pixelshader);
+    Entity* newParticle3 = new Entity();
+    newParticle3->Create(0.5f, 10e2, _imageShaderResourceView, XMFLOAT3(-1.0f, 1.0f, 0.0f), XMFLOAT2(0.0f, 0.0f));
+    newParticle3->Initialize(_dev, _devcon, _cb_vs_vertexshader, _cb_ps_pixelshader);
+    Entity* newParticle4 = new Entity();
+    newParticle4->Create(0.5f, 10e2, _imageShaderResourceView, XMFLOAT3(-1.0f, -1.0f, 0.0f), XMFLOAT2(0.0f, 0.0f));
+    newParticle4->Initialize(_dev, _devcon, _cb_vs_vertexshader, _cb_ps_pixelshader);
+
+    _root->Insert(newParticle1, 0);
+    _root->Insert(newParticle2, 0);
+    _root->Insert(newParticle3, 0);
+    _root->Insert(newParticle4, 0);
 
     _camera.SetProjectionValues(90.0f, static_cast<float>(_wWidth) / static_cast<float>(_wHeight), 0.1f, 1000.0f);
 
@@ -357,10 +375,10 @@ void Graphics::RenderFrame(void)
     _devcon->PSSetShader(_pPS, nullptr, 0);
 
     // Entity draw
-    static XMFLOAT3 cameraPos = {0.0f,0.0f,-200.0f};
+    static XMFLOAT3 cameraPos = {0.0f,0.0f,-10.0f};
     _camera.SetPosition(cameraPos);
 
-    _qt->Draw(_camera.GetViewMatrix() * _camera.GetProjectionMatrix());
+    _root->DrawEntities(_camera.GetViewMatrix() * _camera.GetProjectionMatrix());
     
     // Text / FPS
     static int fpsCount = 0;
@@ -405,7 +423,7 @@ void Graphics::CleanD3D(void)
 
     // Close and release all existing COM objects
     if (_imageShaderResourceView) _imageShaderResourceView->Release();
-    if (_qt) _qt->Release();
+    if (_root) _root->ReleaseEntities();
     if (_spriteBatch) _spriteBatch.release();
     if (_spriteFont) _spriteFont.release();
     if (_depthStencilState) _depthStencilState->Release();

@@ -18,32 +18,62 @@ struct AABB
 	}
 };
 
-class QuadTree
+class QuadTreeNode
 {
 public:
-	QuadTree();
-	QuadTree(AABB boundary);
-	void Insert(Entity* point);
-	void Subdivide();
-	void Draw(const XMMATRIX& viewProjectionMatrix);
-	void Release();
+	// Enumeration for the quadrants
+	enum EQuadrant
+	{
+		NE = 0,
+		NW,
+		SW,
+		SE,
+		NONE
+	};
 
-	void SetBoundary(AABB boundary);
+	QuadTreeNode(const XMFLOAT2& min, const XMFLOAT2& max, QuadTreeNode* parent);
+	//QuadTreeNode(AABB boundary);
 
-	void ComputeMassDistribution();
+	bool IsRoot() const;
+	bool IsExternal() const;
+	bool WasTooClose() const;
+
+	int GetNumRenegades() const;
+	int GetNum() const;
+
+	const XMFLOAT2& GetCenterOfMass() const;
+	const XMFLOAT2& GetMin() const;
+	const XMFLOAT2& GetMax() const;
+
+	double GetTheta() const;
+	void SetTheta(double theta);
+
+	EQuadrant GetQuadrant(float x, float y) const;
+	QuadTreeNode* CreateQuadNode(EQuadrant eQuad);
+
+	void Insert(Entity* newParticle, int level);
+	//void Insert(Entity* point);
+	//void Subdivide();
+
+	void DrawEntities(const XMMATRIX& viewProjectionMatrix);
+	void ReleaseEntities();
+
+	//void ComputeMassDistribution();
 
 private:
-	AABB _boundary;
-	bool _divided;
-	int _capacity;
+	Entity* _assignedEntity;
 
-	std::vector<Entity*> _points;
-	XMFLOAT3 _centerOfMass;
-	float _mass;
+	float _mass;					// mass of all particles inside the node
+	XMFLOAT2 _cm;					// center of Mass
+	XMFLOAT2 _min;					// upper left edge of the node
+	XMFLOAT2 _max;					// lower right edge of the node
+	XMFLOAT2 _center;				// center of the node
+	QuadTreeNode* _parent;			// the parent node
+	int _num;						// the number of particles in this node
+	mutable bool _bSubdivided;		// true if this node is too close to use the approximation for the force calculation
 
-	QuadTree* _northeast = nullptr;
-	QuadTree* _northwest = nullptr;
-	QuadTree* _southeast = nullptr;
-	QuadTree* _southwest = nullptr;
+	double s_theta;
+	std::vector<Entity*> s_renegades;
 
+	QuadTreeNode* _quadNode[4];
 };
