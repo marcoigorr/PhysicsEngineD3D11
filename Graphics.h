@@ -34,6 +34,8 @@ public:
 	QuadTreeNode* GetQuadTreeRoot() const;
 	std::vector<Entity*> GetParticles() const;
 
+	void CreateEntities();
+
 private:
 	IDXGISwapChain* _swapchain;					// pointer to swap chain interface
 	ID3D11Device* _dev;							// pointer to Direct3D device interface
@@ -70,5 +72,5 @@ public:
 	std::vector<Entity*> _particles;
 	QuadTreeNode* _root = new QuadTreeNode(XMFLOAT2(-400.0f, 400.0f), XMFLOAT2(400.0f, -400.0f), nullptr);	// the root node of the barnes hut tree
 
-	bool _editing = true;
+	bool _editing = false;
 };

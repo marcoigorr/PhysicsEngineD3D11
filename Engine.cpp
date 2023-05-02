@@ -46,7 +46,7 @@ bool Engine::Update()
 	{
 		XMFLOAT2 acc = qtRoot->CalcForce(particles[i]);
 
-		particles[i]->UpdateVelocity(acc.x * dt, acc.y * dt);
+		particles[i]->UpdateVelocity(acc.x, acc.y);
 		particles[i]->AdjustPosition();
 	}
 

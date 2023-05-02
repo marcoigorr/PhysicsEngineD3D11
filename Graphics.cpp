@@ -314,8 +314,17 @@ bool Graphics::InitGraphicsD3D11(void)
         return false;
     }
 
+    CreateEntities();
+
+    _camera.SetProjectionValues(90.0f, static_cast<float>(_wWidth) / static_cast<float>(_wHeight), 0.1f, 1000.0f);
+
+    return true;
+}
+
+void Graphics::CreateEntities()
+{
     // Create random orbiting entities
-    float spawnRange = 100.0f;
+    float spawnRange = 50.0f;
     srand(static_cast<unsigned>(time(0)));
 
     // Create orbiting entities
@@ -326,14 +335,10 @@ bool Graphics::InitGraphicsD3D11(void)
         float rY = -spawnRange + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (spawnRange - (-spawnRange))));
 
         Entity* newParticle = new Entity();
-        newParticle->Create(0.5f, 10e6, _imageShaderResourceView, XMFLOAT3(rX, rY, 0.0f), XMFLOAT2(0.0f, 0.0f));
+        newParticle->Create(0.5f, 12e6, _imageShaderResourceView, XMFLOAT3(rX, rY, 0.0f), XMFLOAT2(0.0f, 0.0f));
         newParticle->Initialize(_dev, _devcon, _cb_vs_vertexshader, _cb_ps_pixelshader);
         _particles.push_back(newParticle);
     }
-
-    _camera.SetProjectionValues(90.0f, static_cast<float>(_wWidth) / static_cast<float>(_wHeight), 0.1f, 1000.0f);
-
-    return true;
 }
 
 void Graphics::RenderFrame(void) 
@@ -402,6 +407,11 @@ void Graphics::RenderFrame(void)
                 {
                     ImGui::Checkbox("Edit", &_editing);
                     
+                    ImGui::Spacing();
+                    
+                    std::string N = "Number of bodies (outside tree): " + std::to_string(_root->GetNum()) + "(" + std::to_string(_root->GetNumRenegades()) + ")";
+                    ImGui::Text(N.c_str());
+
                     ImGui::EndTabItem();
                 } 
 
