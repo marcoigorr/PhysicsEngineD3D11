@@ -36,16 +36,19 @@ bool Engine::Update()
 		return true;
 	}
 
-	/* N Squared order for gravity computation
-	 *
-	 *for (int i = 0; i < _gfx._particles.size(); i++)
+	// Build QuadTree
+	QuadTreeNode* qtRoot = _gfx.GetQuadTreeRoot();
+	std::vector<Entity*> particles = _gfx.GetParticles();
+
+	qtRoot->ComputeMassDistribution();
+
+	for (int i = 0; i < particles.size(); i++)
 	{
-		for (int j = 0; j < _gfx._particles.size(); j++)
-		{
-			if (i != j)
-				_gfx._particles[i]->Attract(_gfx._particles[j], dt);
-		}
-	}*/
+		XMFLOAT2 acc = qtRoot->CalcForce(particles[i]);
+
+		particles[i]->UpdateVelocity(acc.x * dt, acc.y * dt);
+		particles[i]->AdjustPosition();
+	}
 
 	_timer.Restart();
 	return true;

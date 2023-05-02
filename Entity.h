@@ -44,8 +44,6 @@ public:
 	void SetMass(float mass);
 	void UpdateMass(float mass);
 
-	XMFLOAT2 CalcAttractionAcc(Entity* entity);
-
 private:
 	void UpdateWorldMatrix();
 

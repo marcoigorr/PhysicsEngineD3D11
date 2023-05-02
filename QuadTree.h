@@ -32,7 +32,7 @@ public:
 	};
 
 	QuadTreeNode(const XMFLOAT2& min, const XMFLOAT2& max, QuadTreeNode* parent);
-	//QuadTreeNode(AABB boundary);
+	~QuadTreeNode();
 
 	bool IsRoot() const;
 	bool IsExternal() const;
@@ -51,17 +51,16 @@ public:
 	EQuadrant GetQuadrant(float x, float y) const;
 	QuadTreeNode* CreateQuadNode(EQuadrant eQuad);
 
+	void Reset(const XMFLOAT2& min, const XMFLOAT2& max);
+
 	void Insert(Entity* newParticle, int level);
-	//void Insert(Entity* point);
-	//void Subdivide();
 	void ComputeMassDistribution();
 	XMFLOAT2 CalcAcc(Entity* p1, Entity* p2) const;
-	void CalcTreeForce(Entity* particle) const;
+	XMFLOAT2 CalcForce(Entity* particle) const;
+	XMFLOAT2 CalcTreeForce(Entity* particle) const;
 
 	void DrawEntities(const XMMATRIX& viewProjectionMatrix);
-	void ReleaseEntities();
-
-	
+	void ReleaseEntities();	
 
 private:
 	Entity* _assignedEntity;
@@ -75,7 +74,7 @@ private:
 	int _num;						// the number of particles in this node
 	mutable bool _bSubdivided;		// true if this node is too close to use the approximation for the force calculation
 
-	double s_theta;
+	double s_theta = 1;
 	std::vector<Entity*> s_renegades;
 
 	QuadTreeNode* _quadNode[4];

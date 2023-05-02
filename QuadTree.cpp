@@ -1,5 +1,7 @@
 #include "QuadTree.h"
 
+#define BIG_G 6.673e-11
+
 QuadTreeNode::QuadTreeNode(const XMFLOAT2& min, const XMFLOAT2& max, QuadTreeNode* parent)
 	:_assignedEntity()
 	,_mass(0)
@@ -13,11 +15,6 @@ QuadTreeNode::QuadTreeNode(const XMFLOAT2& min, const XMFLOAT2& max, QuadTreeNod
 {
 	_quadNode[0] = _quadNode[1] = _quadNode[2] = _quadNode[3] = nullptr;
 }
-
-//QuadTreeNode::QuadTreeNode(AABB boundary)
-//{
-//	_bSubdivided = false;
-//}
 
 bool QuadTreeNode::IsRoot() const
 {
@@ -120,6 +117,30 @@ QuadTreeNode* QuadTreeNode::CreateQuadNode(EQuadrant eQuad)
 								this);
 }
 
+void QuadTreeNode::Reset(const XMFLOAT2& min, const XMFLOAT2& max)
+{
+	if (IsRoot())
+	{
+		if (_assignedEntity)
+			_assignedEntity = nullptr;
+	}
+
+	for (int i = 0; i < 4; i++)
+	{
+		delete _quadNode[i];
+		_quadNode[i] = nullptr;
+	}
+
+	_min = min;
+	_max = max;
+	_center = XMFLOAT2(min.x + (max.x - min.x) / 2.0f, min.y + (max.y - min.y) / 2.0f);
+	_num = 0;
+	_mass = 0;
+	_cm = XMFLOAT2(0.0f, 0.0f);
+
+	s_renegades.clear();
+}
+
 void QuadTreeNode::Insert(Entity* newParticle, int level)
 {
 	// Check if Entity is inside bounding box
@@ -201,64 +222,92 @@ void QuadTreeNode::ComputeMassDistribution()
 
 XMFLOAT2 QuadTreeNode::CalcAcc(Entity* p1, Entity* p2) const
 {
-	XMFLOAT2 acc;
+	XMFLOAT2 acc(0.0f,0.0f);
+
 	if (&p1 == &p2)
 	{
 		return acc;
 	}
 
-	return p1->CalcAttractionAcc(p2);
+	const XMFLOAT3& p1Pos(p1->GetPositionFloat3());
+	const XMFLOAT3& p2Pos(p2->GetPositionFloat3());
+
+	float r = sqrt((p1Pos.x - p2Pos.x) * (p1Pos.x - p2Pos.x) + (p1Pos.y - p2Pos.y) * (p1Pos.y - p2Pos.y) + (0.1f * 0.1f));
+
+	if (r > 30.0f)
+	{
+		float k = BIG_G * p2->GetMass() / (r * r * r);
+
+		acc.x = k * (p2Pos.x - p1Pos.x);
+		acc.y = k * (p2Pos.y - p1Pos.y);
+	}
+	else
+	{
+		acc.x = acc.y = 0.0f;
+	}
+
+	return acc;
 }
 
-void QuadTreeNode::CalcTreeForce(Entity* particle) const
+XMFLOAT2 QuadTreeNode::CalcForce(Entity* particle) const
 {
-	XMFLOAT2 acc;
+	XMFLOAT2 acc = CalcTreeForce(particle);
 
+	if (s_renegades.size())
+	{
+		for (std::size_t i = 0; i < s_renegades.size(); i++)
+		{
+			XMFLOAT2 buf = CalcAcc(particle, s_renegades[i]);
+			acc.x += buf.x;
+			acc.y += buf.y;
+		}
+	}
+
+	return acc;
+}
+
+XMFLOAT2 QuadTreeNode::CalcTreeForce(Entity* particle) const
+{
+	XMFLOAT2 acc(0.0f,0.0f);
+
+	float r(0), d(0), k(0);
 	if (_num == 1)
 	{
 		acc = this->CalcAcc(particle, _assignedEntity);
 	}
 	else
 	{
+		XMFLOAT3 pPos = particle->GetPositionFloat3();
+		float xDistance = (pPos.x - _cm.x);
+		float yDistance = (pPos.y - _cm.y);
+		r = sqrt(xDistance * xDistance + yDistance * yDistance);
+		d = _max.x - _min.x;
+		if (d / r <= s_theta)
+		{
+			_bSubdivided = false;
+			k = BIG_G * _mass / (r * r * r);
+			acc.x = k * (_cm.x - pPos.x);
+			acc.y = k * (_cm.y - pPos.y);
+		}
+		else
+		{
+			_bSubdivided = true;
 
+			XMFLOAT2 buf(0.0f,0.0f);
+			for (int q = 0; q < 4; q++)
+			{
+				if (_quadNode[q])
+				{
+					buf = _quadNode[q]->CalcTreeForce(particle);
+					acc.x += buf.x;
+					acc.y += buf.y;
+				}
+			}
+		}
 	}
 
+	return acc;
 }
-
-//void QuadTreeNode::Insert(Entity* point)
-//{
-//	if (!_boundingBox.Contains(point))
-//		return;
-//
-//	if (_points.size() < 1) 
-//		_points.push_back(point);
-//	else {
-//		if (!_divided)
-//			this->Subdivide();
-//
-//		_northwest->Insert(point);
-//		_northeast->Insert(point);
-//		_southwest->Insert(point);
-//		_southeast->Insert(point);
-//	}
-//}
-
-//void QuadTreeNode::Subdivide()
-//{
-//	AABB NW = { _boundingBox.x - _boundingBox.w / 2, _boundingBox.y - _boundingBox.h / 2, _boundingBox.w / 2, _boundingBox.h / 2 };
-//	_northwest = new QuadTreeNode(NW);
-//
-//	AABB NE = { _boundingBox.x + _boundingBox.w / 2, _boundingBox.y - _boundingBox.h / 2, _boundingBox.w / 2, _boundingBox.h / 2 };
-//	_northeast = new QuadTreeNode(NE);
-//
-//	AABB SW = { _boundingBox.x - _boundingBox.w / 2, _boundingBox.y + _boundingBox.h / 2, _boundingBox.w / 2, _boundingBox.h / 2 };
-//	_southwest = new QuadTreeNode(SW);
-//
-//	AABB SE = { _boundingBox.x + _boundingBox.w / 2, _boundingBox.y + _boundingBox.h / 2, _boundingBox.w / 2, _boundingBox.h / 2 };
-//	_southeast = new QuadTreeNode(SE);
-//
-//	_divided = true;
-//}
 
 void QuadTreeNode::DrawEntities(const XMMATRIX& viewProjectionMatrix)
 {
@@ -290,9 +339,8 @@ void QuadTreeNode::ReleaseEntities()
 	}
 }
 
-//void QuadTreeNode::ComputeMassDistribution()
-//{
-//	
-//}
-
-
+QuadTreeNode::~QuadTreeNode()
+{
+	for (int i = 0; i < 4; ++i)
+		delete _quadNode[i];
+}
