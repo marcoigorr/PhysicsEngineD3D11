@@ -55,8 +55,8 @@ public:
 	//void Insert(Entity* point);
 	//void Subdivide();
 	void ComputeMassDistribution();
-	void CalcForce(Entity* p1, Entity* p2) const;
-	void CalcForce(const Entity* particle) const;
+	XMFLOAT2 CalcAcc(Entity* p1, Entity* p2) const;
+	void CalcTreeForce(Entity* particle) const;
 
 	void DrawEntities(const XMMATRIX& viewProjectionMatrix);
 	void ReleaseEntities();

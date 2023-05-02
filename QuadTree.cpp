@@ -199,17 +199,28 @@ void QuadTreeNode::ComputeMassDistribution()
 	}
 }
 
-void QuadTreeNode::CalcForce(Entity* p1, Entity* p2) const
-{
-
-}
-
-void QuadTreeNode::CalcForce(const Entity* particle) const
+XMFLOAT2 QuadTreeNode::CalcAcc(Entity* p1, Entity* p2) const
 {
 	XMFLOAT2 acc;
+	if (&p1 == &p2)
+	{
+		return acc;
+	}
+
+	return p1->CalcAttractionAcc(p2);
+}
+
+void QuadTreeNode::CalcTreeForce(Entity* particle) const
+{
+	XMFLOAT2 acc;
+
 	if (_num == 1)
 	{
-		acc = CalcAcc(particle, _assignedEntity);
+		acc = this->CalcAcc(particle, _assignedEntity);
+	}
+	else
+	{
+
 	}
 
 }
