@@ -73,7 +73,5 @@ public:
 	std::vector<Entity*> _particles;
 	QuadTreeNode* _root = new QuadTreeNode(XMFLOAT2(-100.0f, 100.0f), XMFLOAT2(100.0f, -100.0f), nullptr);	// the root node of the barnes hut tree
 
-	QuadTreeNode* _root = new QuadTreeNode(XMFLOAT2(-400.0f, 400.0f), XMFLOAT2(400.0f, -100.0f), nullptr);	// the root node of the barnes hut tree
-
 	bool _editing = true;
 };

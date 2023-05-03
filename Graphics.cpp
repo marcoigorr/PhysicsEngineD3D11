@@ -346,16 +346,6 @@ void Graphics::CreateEntities()
     }
 }
 
-QuadTreeNode* Graphics::GetQuadTreeRoot() const
-{
-    return _root;
-}
-
-std::vector<Entity*> Graphics::GetParticles() const
-{
-    return _particles;
-}
-
 void Graphics::RenderFrame(void) 
 {
     // Clear the back buffer to a color
