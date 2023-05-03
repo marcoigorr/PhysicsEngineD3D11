@@ -74,7 +74,7 @@ private:
 	int _num;						// the number of particles in this node
 	mutable bool _bSubdivided;		// true if this node is too close to use the approximation for the force calculation
 
-	double s_theta = 0.8;
+	double s_theta = 1;
 	std::vector<Entity*> s_renegades;
 
 	QuadTreeNode* _quadNode[4];

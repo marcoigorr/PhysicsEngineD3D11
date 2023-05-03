@@ -324,18 +324,23 @@ bool Graphics::InitGraphicsD3D11(void)
 void Graphics::CreateEntities()
 {
     // Create random orbiting entities
-    float spawnRange = 50.0f;
     srand(static_cast<unsigned>(time(0)));
 
-    // Create orbiting entities
-    for (int i = 0; i < 3000; i++)
+    Entity* blackHole = new Entity();
+    blackHole->Create(0.5f, 10e10, _imageShaderResourceView, XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT2(0.0f, 0.0f));
+    blackHole->Initialize(_dev, _devcon, _cb_vs_vertexshader, _cb_ps_pixelshader);
+    _particles.push_back(blackHole);
+
+    for (int i = 0; i < 5000; i++)
     {
-        float rVel = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
-        float rX = -spawnRange + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (spawnRange - (-spawnRange))));
-        float rY = -spawnRange + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (spawnRange - (-spawnRange))));
+        float x(0), y(0);
+        float r = 20.0f * sqrt((double)rand() / RAND_MAX) + 10.0f;
+        float theta = ((double)rand() / RAND_MAX) * 2 * 3.14159265;
+        x = 0.0f + r * cos(theta);
+        y = 0.0f + r * sin(theta);
 
         Entity* newParticle = new Entity();
-        newParticle->Create(0.5f, 12e6, _imageShaderResourceView, XMFLOAT3(rX, rY, 0.0f), XMFLOAT2(0.0f, 0.0f));
+        newParticle->Create(0.5f, 1, _imageShaderResourceView, XMFLOAT3(x, y, 0.0f), XMFLOAT2(y * 0.015, -x * 0.013));
         newParticle->Initialize(_dev, _devcon, _cb_vs_vertexshader, _cb_ps_pixelshader);
         _particles.push_back(newParticle);
     }
@@ -411,6 +416,11 @@ void Graphics::RenderFrame(void)
                     
                     std::string N = "Number of bodies (outside tree): " + std::to_string(_root->GetNum()) + "(" + std::to_string(_root->GetNumRenegades()) + ")";
                     ImGui::Text(N.c_str());
+
+                    ImGui::Spacing();
+
+                    std::string theta = "Theta: " + std::to_string(_root->GetTheta());
+                    ImGui::Text(theta.c_str());
 
                     ImGui::EndTabItem();
                 } 
