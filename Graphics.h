@@ -32,11 +32,11 @@ public:
 	void CleanD3D(void);								// closes Direct3D and releases memory
 	void RenderFrame(void);								// renders a single frame
 
-	void CreateEntities();
-
 	QuadTreeNode* GetQuadTreeRoot() const;
 	std::vector<Entity*> GetParticles() const;
 
+	void CreateEntities();
+  
 private:
 	IDXGISwapChain* _swapchain;					// pointer to swap chain interface
 	ID3D11Device* _dev;							// pointer to Direct3D device interface
@@ -71,6 +71,7 @@ private:
 public:
 	Camera _camera;
 	std::vector<Entity*> _particles;
+	QuadTreeNode* _root = new QuadTreeNode(XMFLOAT2(-100.0f, 100.0f), XMFLOAT2(100.0f, -100.0f), nullptr);	// the root node of the barnes hut tree
 
 	QuadTreeNode* _root = new QuadTreeNode(XMFLOAT2(-400.0f, 400.0f), XMFLOAT2(400.0f, -100.0f), nullptr);	// the root node of the barnes hut tree
 

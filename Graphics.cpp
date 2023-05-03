@@ -470,6 +470,16 @@ void Graphics::RenderFrame(void)
     _swapchain->Present(1, 0); // 1 for VSync
 }
 
+QuadTreeNode* Graphics::GetQuadTreeRoot() const
+{
+    return _root;
+}
+
+std::vector<Entity*> Graphics::GetParticles() const
+{
+    return _particles;
+}
+
 void Graphics::CleanD3D(void)
 {
     _imgui->ShutDown();

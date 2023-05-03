@@ -106,15 +106,15 @@ QuadTreeNode* QuadTreeNode::CreateQuadNode(EQuadrant eQuad)
 
 	else if (eQuad == SW)
 		return new QuadTreeNode(XMFLOAT2(_min.x, _center.y),
-			XMFLOAT2(_center.x, _max.y),
-			this);
+                            XMFLOAT2(_center.x, _max.y),
+                            this);
 	else if (eQuad == NW)
 		return new QuadTreeNode(_min, _center, this);
 
 	else if (eQuad == NE)
 		return new QuadTreeNode(XMFLOAT2(_center.x, _min.y),
-			XMFLOAT2(_max.x, _center.y),
-			this);
+                            XMFLOAT2(_max.x, _center.y),
+                            this);
 }
 
 void QuadTreeNode::Reset(const XMFLOAT2& min, const XMFLOAT2& max)
@@ -201,7 +201,6 @@ void QuadTreeNode::ComputeMassDistribution()
 	{
 		// Compute the center of mass based on the masses of all child quadrants and the center of 
 		// mass as the center of mass of the child quadrants weightes with their mass
-
 		_mass = 0.0f;
 		_cm = XMFLOAT2(0.0f, 0.0f);
 

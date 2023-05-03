@@ -4,6 +4,7 @@
 #include "IndexBuffer.h"
 #include "ConstantBuffer.h"
 #include "ConstantBufferTypes.h"
+#include <array>
 
 using namespace DirectX;
 

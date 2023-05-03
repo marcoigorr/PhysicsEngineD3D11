@@ -12,9 +12,9 @@ struct AABB
 		XMFLOAT3 pos = point->GetPositionFloat3();
 
 		return (pos.x >= this->x - this->w &&
-			pos.x <= this->x + this->w &&
-			pos.y >= this->y - this->h &&
-			pos.y <= this->y + this->h);
+            pos.x <= this->x + this->w &&
+            pos.y >= this->y - this->h &&
+            pos.y <= this->y + this->h);
 	}
 };
 
@@ -60,7 +60,7 @@ public:
 	XMFLOAT2 CalcTreeForce(Entity* particle) const;
 
 	void DrawEntities(const XMMATRIX& viewProjectionMatrix);
-	void ReleaseEntities();
+	void ReleaseEntities();	
 
 private:
 	Entity* _assignedEntity;
