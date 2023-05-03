@@ -8,4 +8,10 @@
 
 ## About
 
-The project focuses on the interaction between celestial bodies. The physics engine has been developed using the DirectX 11 library and the C++ programming language. 
+The project focuses on the interaction between celestial bodies solving NBody problem with Barnes Hut and QuadTree. The physics engine has been developed using the DirectX 11 library and the C++ programming language. 
+
+Main features:
+ - BarnesHut
+ - QuadTree
+ - ImGui menu
+ 
