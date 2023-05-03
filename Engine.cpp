@@ -1,8 +1,6 @@
 #include "Engine.h"
 #include <cmath>
 
-#define BIG_G 6.673e-11
-
 bool Engine::Initialize(HINSTANCE hInstance, std::string window_title, std::string window_class, int width, int height)
 {
 	_timer.Start();
@@ -45,9 +43,6 @@ bool Engine::Update()
 	for (int i = 0; i < particles.size(); i++)
 	{
 		XMFLOAT2 acc = qtRoot->CalcForce(particles[i]);
-
-		if (abs(acc.x) > 0.1 || abs(acc.y) > 0.1)
-			acc.x = acc.y = 0.0f;
 
 		particles[i]->UpdateVelocity(acc.x, acc.y);
 		particles[i]->AdjustPosition();

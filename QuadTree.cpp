@@ -4,14 +4,14 @@
 
 QuadTreeNode::QuadTreeNode(const XMFLOAT2& min, const XMFLOAT2& max, QuadTreeNode* parent)
 	:_assignedEntity()
-	,_mass(0)
-	,_cm()
-	,_min(min)
-	,_max(max)
-	,_center(min.x + (max.x - min.x) / 2.0, min.y + (max.y - min.y) / 2.0)
-	,_parent(parent)
-	,_num(0)
-	,_bSubdivided(false)
+	, _mass(0)
+	, _cm()
+	, _min(min)
+	, _max(max)
+	, _center(min.x + (max.x - min.x) / 2.0, min.y + (max.y - min.y) / 2.0)
+	, _parent(parent)
+	, _num(0)
+	, _bSubdivided(false)
 {
 	_quadNode[0] = _quadNode[1] = _quadNode[2] = _quadNode[3] = nullptr;
 }
@@ -101,20 +101,20 @@ QuadTreeNode::EQuadrant QuadTreeNode::GetQuadrant(float x, float y) const
 
 QuadTreeNode* QuadTreeNode::CreateQuadNode(EQuadrant eQuad)
 {
-	if (eQuad == SE)	
+	if (eQuad == SE)
 		return new QuadTreeNode(_center, _max, this);
 
 	else if (eQuad == SW)
 		return new QuadTreeNode(XMFLOAT2(_min.x, _center.y),
-								XMFLOAT2(_center.x, _max.y),
-								this);
+                            XMFLOAT2(_center.x, _max.y),
+                            this);
 	else if (eQuad == NW)
 		return new QuadTreeNode(_min, _center, this);
 
 	else if (eQuad == NE)
 		return new QuadTreeNode(XMFLOAT2(_center.x, _min.y),
-								XMFLOAT2(_max.x, _center.y),
-								this);
+                            XMFLOAT2(_max.x, _center.y),
+                            this);
 }
 
 void QuadTreeNode::Reset(const XMFLOAT2& min, const XMFLOAT2& max)
@@ -165,7 +165,7 @@ void QuadTreeNode::Insert(Entity* newParticle, int level)
 		// There are two bodies at the exact same coordinates, put it in the renegade vector.
 		if (pos.x == pos2.x && pos.y == pos2.y)
 		{
-			s_renegades.push_back(newParticle);	
+			s_renegades.push_back(newParticle);
 		}
 		else
 		{
@@ -201,7 +201,6 @@ void QuadTreeNode::ComputeMassDistribution()
 	{
 		// Compute the center of mass based on the masses of all child quadrants and the center of 
 		// mass as the center of mass of the child quadrants weightes with their mass
-			
 		_mass = 0.0f;
 		_cm = XMFLOAT2(0.0f, 0.0f);
 
@@ -222,7 +221,7 @@ void QuadTreeNode::ComputeMassDistribution()
 
 XMFLOAT2 QuadTreeNode::CalcAcc(Entity* p1, Entity* p2) const
 {
-	XMFLOAT2 acc(0.0f,0.0f);
+	XMFLOAT2 acc(0.0f, 0.0f);
 
 	if (&p1 == &p2)
 	{
@@ -268,7 +267,7 @@ XMFLOAT2 QuadTreeNode::CalcForce(Entity* particle) const
 
 XMFLOAT2 QuadTreeNode::CalcTreeForce(Entity* particle) const
 {
-	XMFLOAT2 acc(0.0f,0.0f);
+	XMFLOAT2 acc(0.0f, 0.0f);
 
 	float r(0), d(0), k(0);
 	if (_num == 1)
@@ -293,7 +292,7 @@ XMFLOAT2 QuadTreeNode::CalcTreeForce(Entity* particle) const
 		{
 			_bSubdivided = true;
 
-			XMFLOAT2 buf(0.0f,0.0f);
+			XMFLOAT2 buf(0.0f, 0.0f);
 			for (int q = 0; q < 4; q++)
 			{
 				if (_quadNode[q])

@@ -314,7 +314,7 @@ bool Graphics::InitGraphicsD3D11(void)
         return false;
     }
 
-    CreateEntities();
+    this->CreateEntities();
 
     _camera.SetProjectionValues(90.0f, static_cast<float>(_wWidth) / static_cast<float>(_wHeight), 0.1f, 1000.0f);
 
@@ -327,23 +327,33 @@ void Graphics::CreateEntities()
     srand(static_cast<unsigned>(time(0)));
 
     Entity* blackHole = new Entity();
-    blackHole->Create(0.5f, 10e10, _imageShaderResourceView, XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT2(0.0f, 0.0f));
+    blackHole->Create(0.5f, 45e9, _imageShaderResourceView, XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT2(0.0f, 0.0f));
     blackHole->Initialize(_dev, _devcon, _cb_vs_vertexshader, _cb_ps_pixelshader);
     _particles.push_back(blackHole);
 
     for (int i = 0; i < 5000; i++)
     {
         float x(0), y(0);
-        float r = 20.0f * sqrt((double)rand() / RAND_MAX) + 10.0f;
+        float r = 13.0f * sqrt((double)rand() / RAND_MAX) + 15.0f;
         float theta = ((double)rand() / RAND_MAX) * 2 * 3.14159265;
         x = 0.0f + r * cos(theta);
         y = 0.0f + r * sin(theta);
 
         Entity* newParticle = new Entity();
-        newParticle->Create(0.5f, 1, _imageShaderResourceView, XMFLOAT3(x, y, 0.0f), XMFLOAT2(y * 0.015, -x * 0.013));
+        newParticle->Create(0.5f, 14e5, _imageShaderResourceView, XMFLOAT3(x, y, 0.0f), XMFLOAT2(y * 0.015, -x * 0.015));
         newParticle->Initialize(_dev, _devcon, _cb_vs_vertexshader, _cb_ps_pixelshader);
         _particles.push_back(newParticle);
     }
+}
+
+QuadTreeNode* Graphics::GetQuadTreeRoot() const
+{
+    return _root;
+}
+
+std::vector<Entity*> Graphics::GetParticles() const
+{
+    return _particles;
 }
 
 void Graphics::RenderFrame(void) 
@@ -365,20 +375,26 @@ void Graphics::RenderFrame(void)
     _devcon->VSSetShader(_pVS, nullptr, 0);
     _devcon->PSSetShader(_pPS, nullptr, 0);
 
-    // Entity draw
-    static XMFLOAT3 cameraPos = {0.0f,0.0f,-200.0f};
+    // Camera
+    static XMFLOAT3 cameraPos = {0.0f,0.0f,-100.0f};
     _camera.SetPosition(cameraPos);
 
     // Build BH QuadTree
     static XMFLOAT2 center = _root->GetCenterOfMass();
     _root->Reset(XMFLOAT2(center.x - 400.0f, center.y + 400.0f), XMFLOAT2(center.x + 400.0f, center.y - 400.0f));
 
+    // Insert Entities in the data structure
     for (Entity* p : _particles)
     {
         _root->Insert(p, 0);
     }
 
-    _root->DrawEntities(_camera.GetViewMatrix() * _camera.GetProjectionMatrix());
+    // Draw Particles
+    int nParticles = _particles.size();
+    for (int i = 0; i < nParticles; i++)
+    {
+        _particles[i]->Draw(_camera.GetViewMatrix() * _camera.GetProjectionMatrix());
+    }
     
     // Text / FPS
     static int fpsCount = 0;
@@ -393,7 +409,7 @@ void Graphics::RenderFrame(void)
 
     // Start ImGui
     _imgui->BeginRender();
-    {        
+    {
         ImGui::Begin("Camera");
         {
             static float* camv[3] = { &cameraPos.x, &cameraPos.y, &cameraPos.z };
@@ -408,12 +424,12 @@ void Graphics::RenderFrame(void)
         {
             if (ImGui::BeginTabBar("tabs"))
             {
-                if (ImGui::BeginTabItem("Simulation")) 
+                if (ImGui::BeginTabItem("Simulation"))
                 {
                     ImGui::Checkbox("Edit", &_editing);
-                    
+
                     ImGui::Spacing();
-                    
+
                     std::string N = "Number of bodies (outside tree): " + std::to_string(_root->GetNum()) + "(" + std::to_string(_root->GetNumRenegades()) + ")";
                     ImGui::Text(N.c_str());
 
@@ -423,7 +439,7 @@ void Graphics::RenderFrame(void)
                     ImGui::Text(theta.c_str());
 
                     ImGui::EndTabItem();
-                } 
+                }
 
                 /*if (ImGui::BeginTabItem("Entities"))
                 {
@@ -443,7 +459,7 @@ void Graphics::RenderFrame(void)
 
         } ImGui::End();
     }
-    _imgui->EndRender();    
+    _imgui->EndRender();
 
     // Font Render
     _spriteBatch->Begin();
@@ -471,8 +487,8 @@ void Graphics::CleanD3D(void)
     _swapchain->SetFullscreenState(FALSE, NULL);  // switch to windowed mode
 
     // Close and release all existing COM objects
-    if (_imageShaderResourceView) _imageShaderResourceView->Release();
     if (_root) _root->ReleaseEntities();
+    if (_imageShaderResourceView) _imageShaderResourceView->Release();
     if (_spriteBatch) _spriteBatch.release();
     if (_spriteFont) _spriteFont.release();
     if (_depthStencilState) _depthStencilState->Release();
