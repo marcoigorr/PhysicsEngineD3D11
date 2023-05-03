@@ -1,23 +1,32 @@
 #include "Entity.h"
 
-bool Entity::Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceContext, ID3D11ShaderResourceView* texture, ConstantBuffer<CB_VS_vertexshader>& cb_vs_vertexshader, ConstantBuffer<CB_PS_pixelshader>& cb_ps_pixelshader)
+void Entity::Create(float radius, float mass, ID3D11ShaderResourceView* texture, XMFLOAT3 position, XMFLOAT2 velocity)
+{
+    _radius = radius;
+    _mass = mass;
+    _texture = texture;
+    this->SetPosition(position);
+    this->SetVelocity(velocity);
+}
+
+bool Entity::Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceContext, ConstantBuffer<CB_VS_vertexshader>& cb_vs_vertexshader, ConstantBuffer<CB_PS_pixelshader>& cb_ps_pixelshader)
 {
 	_dev = device;
 	_devcon = deviceContext;
-	_texture = texture;
 	_cb_vs_vertexshader = &cb_vs_vertexshader;
     _cb_ps_pixelshader = &cb_ps_pixelshader;
 
     // create a square using the VERTEX struct
+
     Vertex v[] =
     {
-        Vertex(-1.5f, -1.5f, 0.0f,  0.0f, 1.0f),  // Bottom Left
-        Vertex(-1.5f,  1.5f, 0.0f,  0.0f, 0.0f),  // Top Left
-        Vertex(1.5f,  1.5f, 0.0f,  1.0f, 0.0f),  // Top Right
+        Vertex(-_radius, -_radius, 0.0f,  0.0f, 1.0f),  // Bottom Left
+        Vertex(-_radius,  _radius, 0.0f,  0.0f, 0.0f),  // Top Left
+        Vertex(_radius,  _radius, 0.0f,  1.0f, 0.0f),  // Top Right
 
-        Vertex(-1.5f, -1.5f, 0.0f,  0.0f, 1.0f),  // Bottom Left
-        Vertex(1.5f,  1.5f, 0.0f,  1.0f, 0.0f),  // Top Right
-        Vertex(1.5f, -1.5f, 0.0f,  1.0f, 1.0f),  // Bottom Right
+        Vertex(-_radius, -_radius, 0.0f,  0.0f, 1.0f),  // Bottom Left
+        Vertex(_radius,  _radius, 0.0f,  1.0f, 0.0f),  // Top Right
+        Vertex(_radius, -_radius, 0.0f,  1.0f, 1.0f),  // Bottom Right
     };
 
     HRESULT hr;
@@ -40,14 +49,8 @@ bool Entity::Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceContext
         return false;
     } 
 
-    this->SetPosition(0.0f, 0.0f, 100.0f);
 	this->UpdateWorldMatrix();
 	return true;
-}
-
-void Entity::SetTexture(ID3D11ShaderResourceView* texture)
-{ 
-	_texture = texture;
 }
 
 void Entity::Draw(const XMMATRIX& viewProjectionMatrix)
@@ -134,4 +137,62 @@ void Entity::AdjustPosition(float x, float y, float z)
     _pos.z += z;
     _posVector += XMLoadFloat3(&_pos);
     this->UpdateWorldMatrix();
+}
+
+void Entity::AdjustPosition()
+{
+    this->AdjustPosition(_velocity.x, _velocity.y, 0.0f);
+}
+
+const XMFLOAT2& Entity::GetVelocityFloat2() const
+{
+    return _velocity;
+}
+
+void Entity::UpdateVelocity(float newXVelocity, float newYVelocity)
+{
+    _velocity.x += newXVelocity;
+    _velocity.y += newYVelocity;
+}
+
+void Entity::SetVelocity(const XMFLOAT2& velocity)
+{
+    _velocity.x = velocity.x;
+    _velocity.y = velocity.y;
+}
+
+void Entity::SetVelocity(float x, float y)
+{
+    _velocity.x = x;
+    _velocity.y = y;
+}
+
+float Entity::GetRadius() const
+{
+    return _radius;
+}
+
+void Entity::SetRadius(float radius)
+{
+    _radius = radius;
+}
+
+void Entity::UpdateRadius(float radius)
+{
+    _radius += radius;
+}
+
+float Entity::GetMass() const
+{
+    return _mass;
+}
+
+void Entity::SetMass(float mass)
+{
+    _mass = mass;
+}
+
+void Entity::UpdateMass(float mass)
+{
+    _mass += mass;
 }

@@ -173,6 +173,7 @@
     <ClInclude Include="ImGui\imstb_textedit.h" />
     <ClInclude Include="ImGui\imstb_truetype.h" />
     <ClInclude Include="IndexBuffer.h" />
+    <ClInclude Include="QuadTree.h" />
     <ClInclude Include="StringConverter.cpp" />
     <ClInclude Include="StringConverter.h" />
     <ClInclude Include="Timer.h" />
@@ -195,6 +196,7 @@
     <ClCompile Include="ImGui\imgui_tables.cpp" />
     <ClCompile Include="ImGui\imgui_widgets.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="QuadTree.cpp" />
     <ClCompile Include="RenderWindow.cpp" />
     <ClCompile Include="Timer.cpp" />
     <ClCompile Include="WindowContainer.cpp" />

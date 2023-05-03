@@ -4,28 +4,45 @@
 #include "IndexBuffer.h"
 #include "ConstantBuffer.h"
 #include "ConstantBufferTypes.h"
+#include <array>
 
 using namespace DirectX;
 
 class Entity
 {
 public:
-	bool Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceContext, ID3D11ShaderResourceView* texture, ConstantBuffer<CB_VS_vertexshader>& cb_vs_vertexshader, ConstantBuffer<CB_PS_pixelshader>& cb_ps_pixelshader);
-	void SetTexture(ID3D11ShaderResourceView* texture);
+	void Create(float radius, float mass, ID3D11ShaderResourceView* texture, XMFLOAT3 position, XMFLOAT2 velocity);
+	bool Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceContext, ConstantBuffer<CB_VS_vertexshader>& cb_vs_vertexshader, ConstantBuffer<CB_PS_pixelshader>& cb_ps_pixelshader);
 	void Draw(const XMMATRIX& viewProjectionMatrix);
 	void Release();
+
+	void UpdateVelocity(float newXVelocity, float newYVelocity);
 
 	const XMVECTOR& GetPositionVector() const;
 	const XMFLOAT3& GetPositionFloat3() const;
 
-	void SetPosition(const XMVECTOR& pos);
+ 	void SetPosition(const XMVECTOR& pos);
 	void SetPosition(const XMFLOAT3& pos);
 	void SetPosition(float x, float y, float z);
 	void AdjustPosition(const XMVECTOR& pos);
 	void AdjustPosition(const XMFLOAT3& pos);
 	void AdjustPosition(float x, float y, float z);
+	void AdjustPosition();
 
-	bool isBeingEdited = false;
+	const XMFLOAT2& GetVelocityFloat2() const;
+
+	void SetVelocity(const XMFLOAT2& velocity);
+	void SetVelocity(float x, float y);
+
+	float GetRadius() const;
+
+	void SetRadius(float radius);
+	void UpdateRadius(float radius);
+
+	float GetMass() const;
+
+	void SetMass(float mass);
+	void UpdateMass(float mass);
 
 private:
 	void UpdateWorldMatrix();
@@ -43,6 +60,11 @@ private:
 
 	XMVECTOR _posVector;
 	XMFLOAT3 _pos;
+
+	XMFLOAT2 _velocity;
+
+	float _radius;
+	float _mass;
 
 	const XMVECTOR _DEFAULT_FORWARD_VECTOR =	XMVectorSet( 0.0f, 0.0f,  1.0f, 0.0f);
 	const XMVECTOR _DEFAULT_UP_VECTOR =			XMVectorSet( 0.0f, 1.0f,  0.0f, 0.0f);

@@ -1,6 +1,8 @@
 #include "Engine.h"
 #include <cmath>
 
+#define BIG_G 6.673e-11
+
 bool Engine::Initialize(HINSTANCE hInstance, std::string window_title, std::string window_class, int width, int height)
 {
 	_timer.Start();
@@ -28,41 +30,25 @@ bool Engine::Update()
 {
 	float dt = _timer.GetMillisecondElapsed();
 
-	static Entity* gravitySource = &_gfx._entity[0];
-	static Entity* particle = &_gfx._entity[1];
-
-	static float xVelocity = 0.02f;
-	static float yVelocity;
-
-	if (particle->isBeingEdited)
+	if (_gfx._editing)
 	{
 		_timer.Restart();
 		return true;
 	}
 
-	float gravityStrength = -0.05f;
+	// Build QuadTree
+	QuadTreeNode* qtRoot = _gfx.GetQuadTreeRoot();
+	std::vector<Entity*> particles = _gfx.GetParticles();
 
-	XMVECTOR gravitySourceVec = gravitySource->GetPositionVector();
-	XMFLOAT3 gravitySourceFloat3 = gravitySource->GetPositionFloat3();
-	XMVECTOR particleVec = particle->GetPositionVector();
-	XMFLOAT3 particleFloat3 = particle->GetPositionFloat3();
+	qtRoot->ComputeMassDistribution();
 
-	float xDistance = particleFloat3.x - gravitySourceFloat3.x;
-	float yDistance = particleFloat3.y - gravitySourceFloat3.y;
-	float distance =  sqrtf(xDistance*xDistance + yDistance*yDistance);
+	for (int i = 0; i < particles.size(); i++)
+	{
+		XMFLOAT2 acc = qtRoot->CalcForce(particles[i]);
 
-	float inverseDistance = 1.0f / distance;
-	float xNormalized = xDistance * inverseDistance;
-	float yNormalized = yDistance * inverseDistance;
-
-	float inverseSquareDropoff = inverseDistance * inverseDistance;
-	float xAccelleration = xNormalized * gravityStrength * inverseSquareDropoff;
-	float yAccelleration = yNormalized * gravityStrength * inverseSquareDropoff;
-
-	xVelocity += xAccelleration * dt;
-	yVelocity += yAccelleration * dt;
-
-	particle->AdjustPosition(XMFLOAT3(xVelocity, yVelocity, 0.0f));
+		particles[i]->UpdateVelocity(acc.x, acc.y);
+		particles[i]->AdjustPosition();
+	}
 
 	_timer.Restart();
 	return true;

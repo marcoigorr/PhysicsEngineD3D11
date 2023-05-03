@@ -312,24 +312,36 @@ bool Graphics::InitGraphicsD3D11(void)
     {
         ErrorLogger::Log(hr, "Failed to create constant buffer.");
         return false;
-    } 
+    }
 
-    // Initialize Entities
-    if (!_entity[0].Initialize(_dev, _devcon, _imageShaderResourceView, _cb_vs_vertexshader, _cb_ps_pixelshader))
-        return false;
-
-    if (!_entity[1].Initialize(_dev, _devcon, _imageShaderResourceView, _cb_vs_vertexshader, _cb_ps_pixelshader))
-        return false;
-
-    _entity[0].SetPosition(0.0f, 0.0f, 100.0f);
-    _entity[1].SetPosition(20.0f, 20.0f, 100.0f);
+    CreateEntities();
 
     _camera.SetProjectionValues(90.0f, static_cast<float>(_wWidth) / static_cast<float>(_wHeight), 0.1f, 1000.0f);
 
     return true;
 }
 
-void Graphics::RenderFrame(void)
+void Graphics::CreateEntities()
+{
+    // Create random orbiting entities
+    float spawnRange = 50.0f;
+    srand(static_cast<unsigned>(time(0)));
+
+    // Create orbiting entities
+    for (int i = 0; i < 3000; i++)
+    {
+        float rVel = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+        float rX = -spawnRange + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (spawnRange - (-spawnRange))));
+        float rY = -spawnRange + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (spawnRange - (-spawnRange))));
+
+        Entity* newParticle = new Entity();
+        newParticle->Create(0.5f, 12e6, _imageShaderResourceView, XMFLOAT3(rX, rY, 0.0f), XMFLOAT2(0.0f, 0.0f));
+        newParticle->Initialize(_dev, _devcon, _cb_vs_vertexshader, _cb_ps_pixelshader);
+        _particles.push_back(newParticle);
+    }
+}
+
+void Graphics::RenderFrame(void) 
 {
     // Clear the back buffer to a color
     _devcon->ClearRenderTargetView(_backbuffer, D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f));
@@ -349,20 +361,19 @@ void Graphics::RenderFrame(void)
     _devcon->PSSetShader(_pPS, nullptr, 0);
 
     // Entity draw
-    static XMFLOAT3 cameraPos;
-    static XMFLOAT3 entityPos;
-    
+    static XMFLOAT3 cameraPos = {0.0f,0.0f,-200.0f};
     _camera.SetPosition(cameraPos);
 
-    for (int i = 0; i < ARRAYSIZE(_entity); i++)
-    {
-        if (!_entity[1].isBeingEdited)
-            entityPos = _entity[1].GetPositionFloat3();
-        else
-            _entity[1].SetPosition(entityPos);
+    // Build BH QuadTree
+    static XMFLOAT2 center = _root->GetCenterOfMass();
+    _root->Reset(XMFLOAT2(center.x - 400.0f, center.y + 400.0f), XMFLOAT2(center.x + 400.0f, center.y - 400.0f));
 
-        _entity[i].Draw(_camera.GetViewMatrix() * _camera.GetProjectionMatrix());
-    }        
+    for (Entity* p : _particles)
+    {
+        _root->Insert(p, 0);
+    }
+
+    _root->DrawEntities(_camera.GetViewMatrix() * _camera.GetProjectionMatrix());
     
     // Text / FPS
     static int fpsCount = 0;
@@ -377,28 +388,51 @@ void Graphics::RenderFrame(void)
 
     // Start ImGui
     _imgui->BeginRender();
-    ImGui::Begin("Camera");
-    {
-        //ImGui::Text(fpsString.c_str());
-        static float* camv[3] = { &cameraPos.x, &cameraPos.y, &cameraPos.z };
-        ImGui::DragFloat3("Camera Position (x, y, z)", *camv, 0.1f);
-        if (ImGui::Button("RESET POSITION", { 110.0f,20.0f }))
+    {        
+        ImGui::Begin("Camera");
         {
-            cameraPos = XMFLOAT3(0.0f, 0.0f, 0.0f);
-        }
-    } ImGui::End();
+            static float* camv[3] = { &cameraPos.x, &cameraPos.y, &cameraPos.z };
+            ImGui::DragFloat3("Position (x, y, z)", *camv, 0.1f);
+            if (ImGui::Button("RESET POSITION", { 110.0f,20.0f }))
+            {
+                cameraPos = XMFLOAT3(0.0f, 0.0f, -200.0f);
+            }
+        } ImGui::End();
 
-    ImGui::Begin("Entity[1]");
-    {
-        ImGui::Checkbox("Enable Edit", &_entity[1].isBeingEdited);
-
-        static float* entv[3] = { &entityPos.x, &entityPos.y, &entityPos.z };
-        ImGui::DragFloat3("Entity Position (x, y, z)", *entv, 0.1f);
-        if (ImGui::Button("RESET POSITION", { 110.0f,20.0f }))
+        ImGui::Begin("Simulation");
         {
-            entityPos = XMFLOAT3(0.0f, 0.0f, 100.0f);
-        }
-    } ImGui::End();
+            if (ImGui::BeginTabBar("tabs"))
+            {
+                if (ImGui::BeginTabItem("Simulation")) 
+                {
+                    ImGui::Checkbox("Edit", &_editing);
+                    
+                    ImGui::Spacing();
+                    
+                    std::string N = "Number of bodies (outside tree): " + std::to_string(_root->GetNum()) + "(" + std::to_string(_root->GetNumRenegades()) + ")";
+                    ImGui::Text(N.c_str());
+
+                    ImGui::EndTabItem();
+                } 
+
+                /*if (ImGui::BeginTabItem("Entities"))
+                {
+                    for (int i = 0; i < _particles.size(); i++)
+                    {
+                        XMFLOAT3 particlePos = _particles[i]->GetPositionFloat3();
+                        std::string label = "Entity " + std::to_string(i) + " -> x: " + std::to_string(particlePos.x) + " y: " + std::to_string(particlePos.y);
+                        ImGui::Text(label.c_str());
+                        ImGui::Spacing();
+                    }
+
+                    ImGui::EndTabItem();
+                } */
+
+                ImGui::EndTabBar();
+            }
+
+        } ImGui::End();
+    }
     _imgui->EndRender();    
 
     // Font Render
@@ -407,19 +441,28 @@ void Graphics::RenderFrame(void)
     _spriteBatch->End();
 
     // Switch back buffer and front buffer
-    _swapchain->Present(0, 0); // 1 for VSync
+    _swapchain->Present(1, 0); // 1 for VSync
+}
+
+QuadTreeNode* Graphics::GetQuadTreeRoot() const
+{
+    return _root;
+}
+
+std::vector<Entity*> Graphics::GetParticles() const
+{
+    return _particles;
 }
 
 void Graphics::CleanD3D(void)
 {
     _imgui->ShutDown();
 
-    _swapchain->SetFullscreenState(FALSE, NULL);    // switch to windowed mode
+    _swapchain->SetFullscreenState(FALSE, NULL);  // switch to windowed mode
 
-    // close and release all existing COM objects
+    // Close and release all existing COM objects
     if (_imageShaderResourceView) _imageShaderResourceView->Release();
-    if (&_entity[0]) _entity[0].Release();
-    if (&_entity[1]) _entity[1].Release();
+    if (_root) _root->ReleaseEntities();
     if (_spriteBatch) _spriteBatch.release();
     if (_spriteFont) _spriteFont.release();
     if (_depthStencilState) _depthStencilState->Release();
