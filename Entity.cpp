@@ -17,7 +17,6 @@ bool Entity::Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceContext
     _cb_ps_pixelshader = &cb_ps_pixelshader;
 
     // create a square using the VERTEX struct
-
     Vertex v[] =
     {
         Vertex(-_radius, -_radius, 0.0f,  0.0f, 1.0f),  // Bottom Left
@@ -195,60 +194,4 @@ void Entity::SetMass(float mass)
 void Entity::UpdateMass(float mass)
 {
     _mass += mass;
-}
-
-void Entity::Attract(Entity* entity, float dt)
-{
-    XMFLOAT3 entityPos = entity->GetPositionFloat3();
-
-    float xDistance = _pos.x - entityPos.x;
-    float yDistance = _pos.y - entityPos.y;
-    float distance = sqrtf(xDistance * xDistance + yDistance * yDistance);
-
-    if (distance < 20.0f)
-        distance = 20.0f;
-
-    float inverseDistance = 1.0f / distance;
-    float xNormalized = xDistance * inverseDistance;
-    float yNormalized = yDistance * inverseDistance;
-
-    float inverseDistanceSq = inverseDistance * inverseDistance;
-
-    float attractionForce = -(6.673e-11) * (_mass * entity->GetMass()) * inverseDistanceSq;
-
-    float xAccelleration = xNormalized * attractionForce * dt;
-    float yAccelleration = yNormalized * attractionForce * dt;
-
-    // Collision if the distance between objs <= sum of their radii
-    // if (distance <= particle0->GetRadius() + particle1->GetRadius())
-
-    // DEBUG
-    static float max_xAcc = xAccelleration;
-    if (max_xAcc < xAccelleration)
-        max_xAcc = xAccelleration;
-
-    static float min_xAcc = xAccelleration;
-    if (min_xAcc > xAccelleration)
-        min_xAcc = xAccelleration;
-
-	static float max_yAcc = yAccelleration;
-    if (max_yAcc < yAccelleration)
-        max_yAcc = yAccelleration;
-
-    static float min_yAcc = yAccelleration;
-    if (min_yAcc > yAccelleration)
-        min_yAcc = yAccelleration;
-
-    static float max_force = attractionForce;
-    if (max_force < attractionForce)
-        max_force = attractionForce;
-
-    static float min_force = attractionForce;
-    if (min_force > attractionForce)
-        min_force = attractionForce;
-
-    // end DEBUG
-
-    this->UpdateVelocity(xAccelleration, yAccelleration);
-    this->AdjustPosition();
 }

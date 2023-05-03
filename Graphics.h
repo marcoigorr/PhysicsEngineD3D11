@@ -18,6 +18,7 @@
 #include "ImGuiWindow.h"
 #include "Camera.h"
 #include "Entity.h"
+#include "QuadTree.h"
 #include <cstdlib>
 
 class Graphics
@@ -25,11 +26,16 @@ class Graphics
 public:
 	bool Initialize(HWND hWnd, int width, int height);
 	bool InitD3D11(HWND hWnd);							// sets up and initializes Direct3D
-	bool InitImGui(HWND hWnd);									// initialize imgui window
+	bool InitImGui(HWND hWnd);							// initialize imgui window
 	bool InitPipeline(void);							// loads and prepares pipeline
 	bool InitGraphicsD3D11(void);						// creates the shape to render
 	void CleanD3D(void);								// closes Direct3D and releases memory
 	void RenderFrame(void);								// renders a single frame
+
+	void CreateEntities();
+
+	QuadTreeNode* GetQuadTreeRoot() const;
+	std::vector<Entity*> GetParticles() const;
 
 private:
 	IDXGISwapChain* _swapchain;					// pointer to swap chain interface
@@ -65,6 +71,8 @@ private:
 public:
 	Camera _camera;
 	std::vector<Entity*> _particles;
+
+	QuadTreeNode* _root = new QuadTreeNode(XMFLOAT2(-400.0f, 400.0f), XMFLOAT2(400.0f, -100.0f), nullptr);	// the root node of the barnes hut tree
 
 	bool _editing = true;
 };

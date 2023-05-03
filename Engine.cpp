@@ -1,8 +1,6 @@
 #include "Engine.h"
 #include <cmath>
 
-#define BIG_G 6.673e-11
-
 bool Engine::Initialize(HINSTANCE hInstance, std::string window_title, std::string window_class, int width, int height)
 {
 	_timer.Start();
@@ -36,13 +34,18 @@ bool Engine::Update()
 		return true;
 	}
 
-	for (int i = 0; i < _gfx._particles.size(); i++)
+	// Build QuadTree
+	QuadTreeNode* qtRoot = _gfx.GetQuadTreeRoot();
+	std::vector<Entity*> particles = _gfx.GetParticles();
+
+	qtRoot->ComputeMassDistribution();
+
+	for (int i = 0; i < particles.size(); i++)
 	{
-		for (int j = 0; j < _gfx._particles.size(); j++)
-		{
-			if (i != j)
-				_gfx._particles[i]->Attract(_gfx._particles[j], dt);
-		}
+		XMFLOAT2 acc = qtRoot->CalcForce(particles[i]);
+
+		particles[i]->UpdateVelocity(acc.x, acc.y);
+		particles[i]->AdjustPosition();
 	}
 
 	_timer.Restart();

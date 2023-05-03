@@ -314,26 +314,46 @@ bool Graphics::InitGraphicsD3D11(void)
         return false;
     }
 
-    int entities = 500;
-    float spawnRange = 30.0f;
-    srand(static_cast<unsigned>(time(0)));
-
-    // Create orbiting entities
-    for (int i = 0; i < entities; i++)
-    {
-        float rVel = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
-        float rX = -spawnRange + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (spawnRange - (-spawnRange))));
-        float rY = -spawnRange + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (spawnRange - (-spawnRange))));
-
-        Entity* newParticle = new Entity();
-        newParticle->Create(0.5f, 10e2, _imageShaderResourceView, XMFLOAT3(rX, rY, 0.0f), XMFLOAT2(0.0f, 0.0f));
-        newParticle->Initialize(_dev, _devcon, _cb_vs_vertexshader, _cb_ps_pixelshader);
-        _particles.push_back(newParticle);
-    }
+    this->CreateEntities();
 
     _camera.SetProjectionValues(90.0f, static_cast<float>(_wWidth) / static_cast<float>(_wHeight), 0.1f, 1000.0f);
 
     return true;
+}
+
+void Graphics::CreateEntities()
+{
+    // Create random orbiting entities
+    srand(static_cast<unsigned>(time(0)));
+
+    Entity* blackHole = new Entity();
+    blackHole->Create(0.5f, 45e9, _imageShaderResourceView, XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT2(0.0f, 0.0f));
+    blackHole->Initialize(_dev, _devcon, _cb_vs_vertexshader, _cb_ps_pixelshader);
+    _particles.push_back(blackHole);
+
+    for (int i = 0; i < 5000; i++)
+    {
+        float x(0), y(0);
+        float r = 13.0f * sqrt((double)rand() / RAND_MAX) + 15.0f;
+        float theta = ((double)rand() / RAND_MAX) * 2 * 3.14159265;
+        x = 0.0f + r * cos(theta);
+        y = 0.0f + r * sin(theta);
+
+        Entity* newParticle = new Entity();
+        newParticle->Create(0.5f, 14e5, _imageShaderResourceView, XMFLOAT3(x, y, 0.0f), XMFLOAT2(y * 0.015, -x * 0.015));
+        newParticle->Initialize(_dev, _devcon, _cb_vs_vertexshader, _cb_ps_pixelshader);
+        _particles.push_back(newParticle);
+    }
+}
+
+QuadTreeNode* Graphics::GetQuadTreeRoot() const
+{
+    return _root;
+}
+
+std::vector<Entity*> Graphics::GetParticles() const
+{
+    return _particles;
 }
 
 void Graphics::RenderFrame(void) 
@@ -355,16 +375,26 @@ void Graphics::RenderFrame(void)
     _devcon->VSSetShader(_pVS, nullptr, 0);
     _devcon->PSSetShader(_pPS, nullptr, 0);
 
-    // Entity draw
-    int nParticles = _particles.size();
-    static XMFLOAT3 cameraPos = {0.0f,0.0f,-200.0f};
-    
+    // Camera
+    static XMFLOAT3 cameraPos = {0.0f,0.0f,-100.0f};
     _camera.SetPosition(cameraPos);
 
+    // Build BH QuadTree
+    static XMFLOAT2 center = _root->GetCenterOfMass();
+    _root->Reset(XMFLOAT2(center.x - 400.0f, center.y + 400.0f), XMFLOAT2(center.x + 400.0f, center.y - 400.0f));
+
+    // Insert Entities in the data structure
+    for (Entity* p : _particles)
+    {
+        _root->Insert(p, 0);
+    }
+
+    // Draw Particles
+    int nParticles = _particles.size();
     for (int i = 0; i < nParticles; i++)
     {
         _particles[i]->Draw(_camera.GetViewMatrix() * _camera.GetProjectionMatrix());
-    }        
+    }
     
     // Text / FPS
     static int fpsCount = 0;
@@ -379,7 +409,7 @@ void Graphics::RenderFrame(void)
 
     // Start ImGui
     _imgui->BeginRender();
-    {        
+    {
         ImGui::Begin("Camera");
         {
             static float* camv[3] = { &cameraPos.x, &cameraPos.y, &cameraPos.z };
@@ -390,26 +420,46 @@ void Graphics::RenderFrame(void)
             }
         } ImGui::End();
 
-        ImGui::Begin("Particles");
+        ImGui::Begin("Simulation");
         {
-            if (ImGui::Button("Delete All", { 100.0f,20.0f }) && nParticles != 0)
+            if (ImGui::BeginTabBar("tabs"))
             {
-	            _particles.clear();
-            	nParticles = 0;
-            }
-            ImGui::Checkbox("Edit mode", &_editing);
-            ImGui::Spacing();
-        	for (int i = 0; i < nParticles; i++)
-            {
-                XMFLOAT3 particlePos = _particles[i]->GetPositionFloat3();
-                std::string label = "Entity " + std::to_string(i) + " -> x: " + std::to_string(particlePos.x) + " y: " + std::to_string(particlePos.y) + " z: " + std::to_string(particlePos.z);
-                ImGui::Text(label.c_str());
-                ImGui::Spacing();
+                if (ImGui::BeginTabItem("Simulation"))
+                {
+                    ImGui::Checkbox("Edit", &_editing);
+
+                    ImGui::Spacing();
+
+                    std::string N = "Number of bodies (outside tree): " + std::to_string(_root->GetNum()) + "(" + std::to_string(_root->GetNumRenegades()) + ")";
+                    ImGui::Text(N.c_str());
+
+                    ImGui::Spacing();
+
+                    std::string theta = "Theta: " + std::to_string(_root->GetTheta());
+                    ImGui::Text(theta.c_str());
+
+                    ImGui::EndTabItem();
+                }
+
+                /*if (ImGui::BeginTabItem("Entities"))
+                {
+                    for (int i = 0; i < _particles.size(); i++)
+                    {
+                        XMFLOAT3 particlePos = _particles[i]->GetPositionFloat3();
+                        std::string label = "Entity " + std::to_string(i) + " -> x: " + std::to_string(particlePos.x) + " y: " + std::to_string(particlePos.y);
+                        ImGui::Text(label.c_str());
+                        ImGui::Spacing();
+                    }
+
+                    ImGui::EndTabItem();
+                } */
+
+                ImGui::EndTabBar();
             }
 
         } ImGui::End();
     }
-    _imgui->EndRender();    
+    _imgui->EndRender();
 
     // Font Render
     _spriteBatch->Begin();
@@ -427,11 +477,8 @@ void Graphics::CleanD3D(void)
     _swapchain->SetFullscreenState(FALSE, NULL);  // switch to windowed mode
 
     // Close and release all existing COM objects
+    if (_root) _root->ReleaseEntities();
     if (_imageShaderResourceView) _imageShaderResourceView->Release();
-    for (int i = 0; i < _particles.size(); i++)
-    {
-        if (_particles[i]) _particles[i]->Release();
-    }
     if (_spriteBatch) _spriteBatch.release();
     if (_spriteFont) _spriteFont.release();
     if (_depthStencilState) _depthStencilState->Release();
