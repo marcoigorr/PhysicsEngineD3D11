@@ -1,4 +1,5 @@
 #include "Graphics.h"
+#define E 2.71828182845904523536;
 
 bool Graphics::Initialize(HWND hWnd, int width, int height)
 {
@@ -331,10 +332,10 @@ void Graphics::CreateEntities()
     blackHole->Initialize(_dev, _devcon, _cb_vs_vertexshader, _cb_ps_pixelshader);
     _particles.push_back(blackHole);
 
-    for (int i = 0; i < 5000; i++)
+    for (int i = 0; i < 3000; i++)
     {
         float x(0), y(0);
-        float r = 13.0f * sqrt((double)rand() / RAND_MAX) + 15.0f;
+        float r = 30.0f * 1 / (1 + (pow(2.71828182845904523536, -((double)rand() / RAND_MAX))));
         float theta = ((double)rand() / RAND_MAX) * 2 * 3.14159265;
         x = 0.0f + r * cos(theta);
         y = 0.0f + r * sin(theta);
