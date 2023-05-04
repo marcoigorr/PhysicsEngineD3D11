@@ -1,5 +1,7 @@
 #include "Graphics.h"
-#define E 2.71828182845904523536;
+
+#define e 2.71828182845904523536
+#define PI 3.14159265
 
 bool Graphics::Initialize(HWND hWnd, int width, int height)
 {
@@ -328,20 +330,20 @@ void Graphics::CreateEntities()
     srand(static_cast<unsigned>(time(0)));
 
     Entity* blackHole = new Entity();
-    blackHole->Create(0.5f, 45e9, _imageShaderResourceView, XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT2(0.0f, 0.0f));
+    blackHole->Create(0.5f, 55e9, _imageShaderResourceView, XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT2(0.0f, 0.0f));
     blackHole->Initialize(_dev, _devcon, _cb_vs_vertexshader, _cb_ps_pixelshader);
     _particles.push_back(blackHole);
 
-    for (int i = 0; i < 3000; i++)
+    for (int i = 0; i < 4500; i++)
     {
         float x(0), y(0);
-        float r = 30.0f * 1 / (1 + (pow(2.71828182845904523536, -((double)rand() / RAND_MAX))));
-        float theta = ((double)rand() / RAND_MAX) * 2 * 3.14159265;
+        float r = 30.0f * 1 / (1 + (pow(e, -((double)rand() / RAND_MAX))));
+        float theta = ((double)rand() / RAND_MAX) * 2 * PI;
         x = 0.0f + r * cos(theta);
         y = 0.0f + r * sin(theta);
 
         Entity* newParticle = new Entity();
-        newParticle->Create(0.5f, 14e5, _imageShaderResourceView, XMFLOAT3(x, y, 0.0f), XMFLOAT2(y * 0.015, -x * 0.015));
+        newParticle->Create(0.5f, 10e5, _imageShaderResourceView, XMFLOAT3(x, y, 0.0f), XMFLOAT2(y * 0.015, -x * 0.015));
         newParticle->Initialize(_dev, _devcon, _cb_vs_vertexshader, _cb_ps_pixelshader);
         _particles.push_back(newParticle);
     }
