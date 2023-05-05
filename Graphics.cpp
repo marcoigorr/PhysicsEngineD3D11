@@ -415,20 +415,82 @@ void Graphics::RenderFrame(void)
         ImGui::Begin("Physics Engine", &menu, ImGuiWindowFlags_MenuBar);
         if (ImGui::BeginMenuBar())
         {
-            if (ImGui::BeginMenu("Level"))
+            // Scene menu
+            if (ImGui::BeginMenu("Scene"))
             {
-                //if (ImGui::MenuItem("Close", "Ctrl+W")) { menu = false; }
+                if (ImGui::MenuItem("Clear Scene", "Ctrl+R")) 
+                { 
+                    if (_qtRoot) _qtRoot->ReleaseEntities(); 
+                    if (_particles.size()) _particles.clear();
+                }
+
                 ImGui::EndMenu();
             }
+
+            // Pause update
+            ImGui::SetCursorPosX(ImGui::GetContentRegionAvail().x - 70);
             ImGui::Checkbox("Pause", &_editing);
 
+            ImGui::Spacing();
+
+            // Fps string
+            ImGui::Text(fpsString.c_str());
+
             ImGui::EndMenuBar();
-        }            
-        static int N = 0;
-        ImGui::InputInt("Number of bodies", &N);
-        if (ImGui::Button("Spawn"))
+        }      
+
+        // Camera transforms
+        if (ImGui::CollapsingHeader("Camera", ImGuiTreeNodeFlags_FramePadding))
         {
-            this->CreateEntities(N);
+            if (ImGui::BeginChild("camera conf", ImVec2(0, 130), true))
+            {
+                ImGui::DragFloat("X", &_cameraPos.x, 0.1f);
+                ImGui::DragFloat("Y", &_cameraPos.y, 0.1f);
+                ImGui::DragFloat("Z", &_cameraPos.z, 0.1f);
+
+                ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 10);
+
+                if (ImGui::Button("Reset position"))
+                {
+                    _cameraPos = _camera.GetDefPosition();
+                }
+            }
+            ImGui::EndChild();
+        }
+
+        // Scene configuration
+        if (ImGui::CollapsingHeader("Level", ImGuiTreeNodeFlags_FramePadding))
+        {
+            static int N = 0;
+            static float p_mass = 10e5;
+            static float p_radius = 0.5;
+            static float p_position[2] = { 0,0 };
+            static float p_velocity[2] = { 0,0 };
+            static float p_range = 30.0f;
+            static int pattern = 0;
+
+            ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPosX() + 10, ImGui::GetCursorPosY() + 10));
+
+            ImGui::TextWrapped("Particles spawn parameters");
+          
+            if (ImGui::BeginChild("spawn conf", ImVec2(0, 250), true))
+            {
+                ImGui::InputInt("N (bodies)", &N); ImGui::Spacing();
+                ImGui::InputFloat("MASS", &p_mass, 1000.0f, 0, "%.1f"); ImGui::Spacing();
+                ImGui::InputFloat("RADIUS", &p_radius); ImGui::Spacing();
+                ImGui::InputFloat2("POSITION (x, y)", p_position, "%.1f"); ImGui::Spacing();
+                ImGui::InputFloat2("VELOCITY (x, y)", p_velocity); ImGui::Spacing();
+                ImGui::InputFloat("RANGE", &p_range, 1.0f, 0, "%.1f"); ImGui::Spacing();
+                ImGui::SliderInt("PATTERN", &pattern, 0, 0); ImGui::Spacing();
+
+                ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 10);
+
+                if (ImGui::Button("Spawn"))
+                {
+                    this->CreateEntities(N, p_mass, p_radius, ImVec2(p_position[0], p_position[1]), ImVec2(p_velocity[0], p_velocity[1]), p_range, pattern);
+                }                
+            }
+            ImGui::EndChild();
         }
 
         ImGui::End();
