@@ -12,7 +12,9 @@ public:
 	const XMMATRIX& GetProjectionMatrix() const;
 
 	const XMVECTOR& GetPositionVector() const;
-	const XMFLOAT3& GetPositionFloat3() const;;
+	const XMFLOAT3& GetPositionFloat3() const;
+
+	const XMFLOAT3& GetDefPosition() const;
 
 	void SetPosition(const XMVECTOR& pos);
 	void SetPosition(const XMFLOAT3& pos);
@@ -31,4 +33,6 @@ private:
 
 	const XMVECTOR _DEFAULT_FORWARD_VECTOR = XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f);
 	const XMVECTOR _DEFAULT_UP_VECTOR = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+
+	XMFLOAT3 _defPosition;
 };

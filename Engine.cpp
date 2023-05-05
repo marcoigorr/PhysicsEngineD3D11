@@ -28,24 +28,24 @@ bool Engine::Update()
 {
 	float dt = _timer.GetMillisecondElapsed();
 
+	static Camera& s_camera = _gfx.GetCamera();
+	static std::vector<Entity*>& s_particles = _gfx._particles;
+	static QuadTreeNode* s_qtRoot = _gfx._qtRoot;
+
+	if (s_qtRoot) s_qtRoot->ComputeMassDistribution();
+
 	if (_gfx._editing)
 	{
 		_timer.Restart();
 		return true;
 	}
 
-	// Build QuadTree
-	QuadTreeNode* qtRoot = _gfx.GetQuadTreeRoot();
-	std::vector<Entity*> particles = _gfx.GetParticles();
-
-	qtRoot->ComputeMassDistribution();
-
-	for (int i = 0; i < particles.size(); i++)
+	for (int i = 0; i < s_particles.size(); i++)
 	{
-		XMFLOAT2 acc = qtRoot->CalcForce(particles[i]);
+		XMFLOAT2 acc = s_qtRoot->CalcForce(s_particles[i]);
 
-		particles[i]->UpdateVelocity(acc.x, acc.y);
-		particles[i]->AdjustPosition();
+		s_particles[i]->UpdateVelocity(acc.x, acc.y);
+		s_particles[i]->AdjustPosition();
 	}
 
 	_timer.Restart();

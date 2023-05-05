@@ -231,9 +231,9 @@ XMFLOAT2 QuadTreeNode::CalcAcc(Entity* p1, Entity* p2) const
 	const XMFLOAT3& p1Pos(p1->GetPositionFloat3());
 	const XMFLOAT3& p2Pos(p2->GetPositionFloat3());
 
-	float r = sqrt((p1Pos.x - p2Pos.x) * (p1Pos.x - p2Pos.x) + (p1Pos.y - p2Pos.y) * (p1Pos.y - p2Pos.y));
+	float r = sqrt((p1Pos.x - p2Pos.x) * (p1Pos.x - p2Pos.x) + (p1Pos.y - p2Pos.y) * (p1Pos.y - p2Pos.y) + s_soft);
 
-	if (r > 30.0f)
+	if (r > s_attractionThreshold)
 	{
 		float k = BIG_G * p2->GetMass() / (r * r * r);
 

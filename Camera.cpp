@@ -2,7 +2,9 @@
 
 Camera::Camera()
 {
-	_pos = XMFLOAT3(0.0f, 0.0f, 0.0f);
+	_defPosition = XMFLOAT3(0.0f, 0.0f, -100.0f);
+
+	_pos = _defPosition;
 	_posVector = XMLoadFloat3(&_pos);
 	_rot = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	_rotVector = XMLoadFloat3(&_rot);
@@ -33,6 +35,11 @@ const XMVECTOR& Camera::GetPositionVector() const
 const XMFLOAT3& Camera::GetPositionFloat3() const
 {
 	return _pos;
+}
+
+const XMFLOAT3& Camera::GetDefPosition() const
+{
+	return _defPosition;
 }
 
 void Camera::SetPosition(const XMVECTOR& pos)
