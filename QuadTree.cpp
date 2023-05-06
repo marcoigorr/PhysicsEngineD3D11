@@ -310,15 +310,12 @@ XMFLOAT2 QuadTreeNode::CalcTreeForce(Entity* particle) const
 
 void QuadTreeNode::DrawEntities(const XMMATRIX& viewProjectionMatrix)
 {
-	if (_parent == nullptr)
-		_assignedEntity->Draw(viewProjectionMatrix);
-
-	if (_assignedEntity != nullptr)
+	if (_assignedEntity)
 		_assignedEntity->Draw(viewProjectionMatrix);
 
 	for (int i = 0; i < 4; i++)
 	{
-		if (_quadNode[i] != nullptr)
+		if (_quadNode[i])
 			_quadNode[i]->DrawEntities(viewProjectionMatrix);
 	}
 }
@@ -336,6 +333,9 @@ void QuadTreeNode::ReleaseEntities()
 		if (_quadNode[i] != nullptr)
 			_quadNode[i]->ReleaseEntities();
 	}
+	
+	for (Entity* r : s_renegades)
+		if (r) r->Release();
 }
 
 QuadTreeNode::~QuadTreeNode()

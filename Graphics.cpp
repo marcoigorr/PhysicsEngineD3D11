@@ -336,7 +336,7 @@ void Graphics::CreateEntities(int N,
                             ImVec2 center, 
                             ImVec2 velocity, 
                             float range, 
-                            int patternFlag)
+                            int pattern)
 {
     // Create random orbiting entities
     srand(static_cast<unsigned>(time(0)));
@@ -348,9 +348,12 @@ void Graphics::CreateEntities(int N,
 
     for (int i = 0; i < N; i++)
     {
-        float x(0), y(0);
-        // float r = range * 1 / (1 + (pow(e, -((double)rand() / RAND_MAX))));
-        float r = range * sqrt((double)rand() / RAND_MAX) + 5.0f;
+        float x(0), y(0), r(0);
+        if (pattern == 0) // Circle
+            r = range * sqrt((double)rand() / RAND_MAX);
+        else if (pattern == 1) // Donut
+            r = range * 1 / (1 + (pow(e, -((double)rand() / RAND_MAX))));
+            
         float theta = ((double)rand() / RAND_MAX) * 2 * PI;
         x = center.x + r * cos(theta);
         y = center.y + r * sin(theta);
@@ -393,10 +396,8 @@ void Graphics::RenderFrame(void)
     }
 
     // Draw particles if there are any
-    for (Entity* p : _particles)
-    {
-        p->Draw(_camera.GetViewMatrix() * _camera.GetProjectionMatrix());
-    }
+    if (_qtRoot->GetNum())
+        _qtRoot->DrawEntities(_camera.GetViewMatrix() * _camera.GetProjectionMatrix());
 
     // Text / FPS
     fpsCount += 1;
@@ -420,7 +421,8 @@ void Graphics::RenderFrame(void)
             {
                 if (ImGui::MenuItem("Clear Scene", "Ctrl+R")) 
                 { 
-                    if (_qtRoot) _qtRoot->ReleaseEntities(); 
+                    for (Entity* p : _particles)
+                        p->Release();
                     if (_particles.size()) _particles.clear();
                 }
 
@@ -459,7 +461,7 @@ void Graphics::RenderFrame(void)
         }
 
         // Scene configuration
-        if (ImGui::CollapsingHeader("Level", ImGuiTreeNodeFlags_FramePadding))
+        if (ImGui::CollapsingHeader("Spawn", ImGuiTreeNodeFlags_FramePadding))
         {
             static int N = 0;
             static float p_mass = 10e5;
@@ -467,27 +469,42 @@ void Graphics::RenderFrame(void)
             static float p_position[2] = { 0,0 };
             static float p_velocity[2] = { 0,0 };
             static float p_range = 30.0f;
-            static int pattern = 0;
+            static int patternCode = 0;
 
             ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPosX() + 10, ImGui::GetCursorPosY() + 10));
-
             ImGui::TextWrapped("Particles spawn parameters");
-          
-            if (ImGui::BeginChild("spawn conf", ImVec2(0, 250), true))
+            if (ImGui::BeginChild("Spawn", ImVec2(0, 250), true))
             {
                 ImGui::InputInt("N (bodies)", &N); ImGui::Spacing();
-                ImGui::InputFloat("MASS", &p_mass, 1000.0f, 0, "%.1f"); ImGui::Spacing();
+                ImGui::InputFloat("MASS", &p_mass, 10e5, 0, "%.1f"); ImGui::Spacing();
                 ImGui::InputFloat("RADIUS", &p_radius); ImGui::Spacing();
                 ImGui::InputFloat2("POSITION (x, y)", p_position, "%.1f"); ImGui::Spacing();
                 ImGui::InputFloat2("VELOCITY (x, y)", p_velocity); ImGui::Spacing();
                 ImGui::InputFloat("RANGE", &p_range, 1.0f, 0, "%.1f"); ImGui::Spacing();
-                ImGui::SliderInt("PATTERN", &pattern, 0, 0); ImGui::Spacing();
+
+                static const char* patterns[] = { "Circle", "Donut" };
+                static const char* selection = NULL;
+                if (ImGui::BeginCombo("PATTERN", selection))
+                {
+                    for (int n = 0; n < IM_ARRAYSIZE(patterns); n++)
+                    {
+                        bool is_selected = (selection == patterns[n]);
+                        if (ImGui::Selectable(patterns[n], is_selected))
+                        {
+                            selection = patterns[n];
+                            patternCode = n;
+                        }
+                        if (is_selected)
+                            ImGui::SetItemDefaultFocus();
+                    }
+                    ImGui::EndCombo();
+                }
 
                 ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 10);
 
                 if (ImGui::Button("Spawn"))
                 {
-                    this->CreateEntities(N, p_mass, p_radius, ImVec2(p_position[0], p_position[1]), ImVec2(p_velocity[0], p_velocity[1]), p_range, pattern);
+                    this->CreateEntities(N, p_mass, p_radius, ImVec2(p_position[0], p_position[1]), ImVec2(p_velocity[0], p_velocity[1]), p_range, patternCode);
                 }                
             }
             ImGui::EndChild();
@@ -519,6 +536,7 @@ void Graphics::CleanD3D(void)
         {
             if (_particles[i]) _particles[i]->Release();
         }
+
     }
     if (_imageShaderResourceView) _imageShaderResourceView->Release();
     if (_spriteBatch) _spriteBatch.release();
