@@ -475,9 +475,9 @@ void Graphics::RenderFrame(void)
             ImGui::TextWrapped("Particles spawn parameters");
             if (ImGui::BeginChild("Spawn", ImVec2(0, 250), true))
             {
-                ImGui::InputInt("N (bodies)", &N); ImGui::Spacing();
+                ImGui::InputInt("N (bodies)", &N, 1000); ImGui::Spacing();
                 ImGui::InputFloat("MASS", &p_mass, 10e5, 0, "%.1f"); ImGui::Spacing();
-                ImGui::InputFloat("RADIUS", &p_radius); ImGui::Spacing();
+                ImGui::InputFloat("RADIUS", &p_radius, 10); ImGui::Spacing();
                 ImGui::InputFloat2("POSITION (x, y)", p_position, "%.1f"); ImGui::Spacing();
                 ImGui::InputFloat2("VELOCITY (x, y)", p_velocity); ImGui::Spacing();
                 ImGui::InputFloat("RANGE", &p_range, 1.0f, 0, "%.1f"); ImGui::Spacing();
