@@ -81,6 +81,6 @@ private:
 public:
 	double s_theta = 0.8;
 	double s_soft = 0.1 * 0.1;
-	float s_range = 100.0f;
+	float s_range = 300.0f;
 	float s_attractionThreshold = 10.0f;
 };

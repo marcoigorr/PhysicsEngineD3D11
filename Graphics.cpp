@@ -387,17 +387,25 @@ void Graphics::RenderFrame(void)
     // Camera
     _camera.SetPosition(_cameraPos);
 
-    static XMFLOAT2 center = _qtRoot->GetCenterOfMass();
-    _qtRoot->Reset(XMFLOAT2(center.x - _qtRoot->s_range , center.y + _qtRoot->s_range), XMFLOAT2(center.x + _qtRoot->s_range, center.y - _qtRoot->s_range));
-
-    for (Entity* p : _particles)
+    // If there is at least a particle in the quadtree
+    if (_particles.size())
     {
-        _qtRoot->Insert(p, 0);
-    }
+        // Reset and calculate new min/max (bounding box)
+        XMFLOAT2 center = _qtRoot->GetCenterOfMass();
+        _qtRoot->Reset(XMFLOAT2(center.x - _qtRoot->s_range, center.y + _qtRoot->s_range), XMFLOAT2(center.x + _qtRoot->s_range, center.y - _qtRoot->s_range));
 
-    // Draw particles if there are any
-    if (_qtRoot->GetNum())
+        // Insert particles in the quadtree
+        for (Entity* p : _particles)
+        {
+            _qtRoot->Insert(p, 0);
+        }
+
+        // Compute mass
+        _qtRoot->ComputeMassDistribution();
+
+        // Draw particles
         _qtRoot->DrawEntities(_camera.GetViewMatrix() * _camera.GetProjectionMatrix());
+    }
 
     // Text / FPS
     fpsCount += 1;
@@ -517,6 +525,12 @@ void Graphics::RenderFrame(void)
     // Font Render
     _spriteBatch->Begin();
     _spriteFont->DrawString(_spriteBatch.get(), fpsString.c_str(), DirectX::XMFLOAT2(0, 0), DirectX::Colors::White, 0.0f, DirectX::XMFLOAT2(0.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 1.0f));
+    _spriteFont->DrawString(_spriteBatch.get(), ("Theta: " + std::to_string(_qtRoot->GetTheta())).c_str(), DirectX::XMFLOAT2(0, 30), DirectX::Colors::White, 0.0f, DirectX::XMFLOAT2(0.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 1.0f));
+    _spriteFont->DrawString(_spriteBatch.get(), ("N: " + std::to_string(_qtRoot->GetNum())).c_str(), DirectX::XMFLOAT2(0, 60), DirectX::Colors::White, 0.0f, DirectX::XMFLOAT2(0.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 1.0f));
+    _spriteFont->DrawString(_spriteBatch.get(), ("Min (x, y): " + std::to_string((int)_qtRoot->GetMin().x) + ", " + std::to_string((int)_qtRoot->GetMin().y)).c_str(), DirectX::XMFLOAT2(0, 90), DirectX::Colors::White, 0.0f, DirectX::XMFLOAT2(0.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 1.0f));
+    _spriteFont->DrawString(_spriteBatch.get(), ("Max (x, y): " + std::to_string((int)_qtRoot->GetMax().x) + ", " + std::to_string((int)_qtRoot->GetMax().y)).c_str(), DirectX::XMFLOAT2(0, 120), DirectX::Colors::White, 0.0f, DirectX::XMFLOAT2(0.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 1.0f));
+    _spriteFont->DrawString(_spriteBatch.get(), ("Center of Mass (x, y): " + std::to_string(_qtRoot->GetCenterOfMass().x) + ", " + std::to_string(_qtRoot->GetCenterOfMass().y)).c_str(), DirectX::XMFLOAT2(0, 150), DirectX::Colors::White, 0.0f, DirectX::XMFLOAT2(0.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 1.0f));
+
     _spriteBatch->End();
 
     // Switch back buffer and front buffer

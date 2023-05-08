@@ -32,8 +32,6 @@ bool Engine::Update()
 	static std::vector<Entity*>& s_particles = _gfx._particles;
 	static QuadTreeNode* s_qtRoot = _gfx._qtRoot;
 
-	if (s_qtRoot) s_qtRoot->ComputeMassDistribution();
-
 	if (_gfx._editing)
 	{
 		_timer.Restart();
