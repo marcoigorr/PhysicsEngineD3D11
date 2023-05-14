@@ -78,9 +78,11 @@ private:
 
 	QuadTreeNode* _quadNode[4];
 
+	double gamma_1 = 6.673e-11 / (3.08567758129e16 * 3.08567758129e16 * 3.08567758129e16) * 1.988435e30 * (365.25 * 86400) * (365.25 * 86400);
+
 public:
-	double s_theta = 0.8;
+	double s_theta = 1.5;
 	double s_soft = 0.1 * 0.1;
-	float s_range = 100.0f;
+	float s_range = 400.0f;
 	float s_attractionThreshold = 10.0f;
 };

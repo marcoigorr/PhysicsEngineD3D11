@@ -33,13 +33,8 @@ public:
 	void RenderFrame(void);								// renders a single frame
 
 	Camera& GetCamera();
-	void CreateEntities(int N,
-						float mass = 10e7f,
-						float radius = 0.5f,
-						ImVec2 center = ImVec2(0, 0),
-						ImVec2 velocity = ImVec2(0.015, 0.015),
-						float range = 30.0f,
-						int patternFlag = 0);
+
+	void SpiralGalaxy(int N);
   
 private:
 	int _wWidth;
@@ -76,7 +71,7 @@ private:
 	ImGuiWindow* _imgui;
 
 	Camera _camera;
-	XMFLOAT3 _cameraPos = _camera.GetDefPosition();  // to remove
+	XMFLOAT3 _cameraPos;
 
 public:	
 	bool _editing = true;

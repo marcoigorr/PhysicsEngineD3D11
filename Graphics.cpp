@@ -2,6 +2,8 @@
 
 #define e 2.71828182845904523536
 #define PI 3.14159265
+#define SUN_MASS 1.988435e30
+#define PARSEC_IN_METER 3.08567758129e16
 
 bool Graphics::Initialize(HWND hWnd, int width, int height)
 {
@@ -318,6 +320,7 @@ bool Graphics::InitGraphicsD3D11(void)
     }
 
     _camera.SetProjectionValues(90.0f, static_cast<float>(_wWidth) / static_cast<float>(_wHeight), 0.1f, 1000.0f);
+    _cameraPos = _camera.GetDefPosition();
 
     float initialRange = 100.0f;
     _qtRoot = new QuadTreeNode(XMFLOAT2(-initialRange, initialRange), XMFLOAT2(initialRange, -initialRange), nullptr);
@@ -328,41 +331,6 @@ bool Graphics::InitGraphicsD3D11(void)
 Camera& Graphics::GetCamera()
 {
     return _camera;
-}
-
-void Graphics::CreateEntities(int N, 
-                            float mass, 
-                            float radius,
-                            ImVec2 center, 
-                            ImVec2 velocity, 
-                            float range, 
-                            int pattern)
-{
-    // Create random orbiting entities
-    srand(static_cast<unsigned>(time(0)));
-
-    /*Entity* blackHole = new Entity();
-    blackHole->Create(0.5f, 55e9, _imageShaderResourceView, XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT2(0.0f, 0.0f));
-    blackHole->Initialize(_dev, _devcon, _cb_vs_vertexshader, _cb_ps_pixelshader);
-    _particles.push_back(blackHole);*/
-
-    for (int i = 0; i < N; i++)
-    {
-        float x(0), y(0), r(0);
-        if (pattern == 0) // Circle
-            r = range * sqrt((double)rand() / RAND_MAX);
-        else if (pattern == 1) // Donut
-            r = range * 1 / (1 + (pow(e, -((double)rand() / RAND_MAX))));
-            
-        float theta = ((double)rand() / RAND_MAX) * 2 * PI;
-        x = center.x + r * cos(theta);
-        y = center.y + r * sin(theta);
-
-        Entity* newParticle = new Entity();
-        newParticle->Create(radius, mass, _imageShaderResourceView, XMFLOAT3(x, y, 0.0f), XMFLOAT2(y * velocity.x, -x * velocity.y));
-        newParticle->Initialize(_dev, _devcon, _cb_vs_vertexshader, _cb_ps_pixelshader);
-        _particles.push_back(newParticle);
-    }
 }
 
 void Graphics::RenderFrame(void) 
@@ -408,12 +376,10 @@ void Graphics::RenderFrame(void)
         _fpsTimer.Restart();
     }
 
-    static bool menu;
-
     // Start ImGui
     _imgui->BeginRender();
     {
-        ImGui::Begin("Physics Engine", &menu, ImGuiWindowFlags_MenuBar);
+        ImGui::Begin("Physics Engine", nullptr, ImGuiWindowFlags_MenuBar);
         if (ImGui::BeginMenuBar())
         {
             // Scene menu
@@ -463,49 +429,19 @@ void Graphics::RenderFrame(void)
         // Scene configuration
         if (ImGui::CollapsingHeader("Spawn", ImGuiTreeNodeFlags_FramePadding))
         {
-            static int N = 0;
-            static float p_mass = 10e5;
-            static float p_radius = 0.5;
-            static float p_position[2] = { 0,0 };
-            static float p_velocity[2] = { 0,0 };
-            static float p_range = 30.0f;
-            static int patternCode = 0;
+            static int N(0);
 
             ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPosX() + 10, ImGui::GetCursorPosY() + 10));
-            ImGui::TextWrapped("Particles spawn parameters");
+            ImGui::TextWrapped("Simulation selection");
             if (ImGui::BeginChild("Spawn", ImVec2(0, 250), true))
             {
                 ImGui::InputInt("N (bodies)", &N, 1000); ImGui::Spacing();
-                ImGui::InputFloat("MASS", &p_mass, 10e5, 0, "%.1f"); ImGui::Spacing();
-                ImGui::InputFloat("RADIUS", &p_radius, 10); ImGui::Spacing();
-                ImGui::InputFloat2("POSITION (x, y)", p_position, "%.1f"); ImGui::Spacing();
-                ImGui::InputFloat2("VELOCITY (x, y)", p_velocity); ImGui::Spacing();
-                ImGui::InputFloat("RANGE", &p_range, 1.0f, 0, "%.1f"); ImGui::Spacing();
-
-                static const char* patterns[] = { "Circle", "Donut" };
-                static const char* selection = NULL;
-                if (ImGui::BeginCombo("PATTERN", selection))
-                {
-                    for (int n = 0; n < IM_ARRAYSIZE(patterns); n++)
-                    {
-                        bool is_selected = (selection == patterns[n]);
-                        if (ImGui::Selectable(patterns[n], is_selected))
-                        {
-                            selection = patterns[n];
-                            patternCode = n;
-                        }
-                        if (is_selected)
-                            ImGui::SetItemDefaultFocus();
-                    }
-                    ImGui::EndCombo();
-                }
 
                 ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 10);
-
                 if (ImGui::Button("Spawn"))
                 {
-                    this->CreateEntities(N, p_mass, p_radius, ImVec2(p_position[0], p_position[1]), ImVec2(p_velocity[0], p_velocity[1]), p_range, patternCode);
-                }                
+                    this->SpiralGalaxy(N);
+                }
             }
             ImGui::EndChild();
         }
@@ -517,6 +453,8 @@ void Graphics::RenderFrame(void)
     // Font Render
     _spriteBatch->Begin();
     _spriteFont->DrawString(_spriteBatch.get(), fpsString.c_str(), DirectX::XMFLOAT2(0, 0), DirectX::Colors::White, 0.0f, DirectX::XMFLOAT2(0.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 1.0f));
+    _spriteFont->DrawString(_spriteBatch.get(), ("Theta: " + std::to_string(_qtRoot->GetTheta())).c_str(), DirectX::XMFLOAT2(0, 20), DirectX::Colors::White, 0.0f, DirectX::XMFLOAT2(0.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 1.0f));
+    _spriteFont->DrawString(_spriteBatch.get(), ("N: " + std::to_string(_qtRoot->GetNum())).c_str(), DirectX::XMFLOAT2(0, 40), DirectX::Colors::White, 0.0f, DirectX::XMFLOAT2(0.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 1.0f));
     _spriteBatch->End();
 
     // Switch back buffer and front buffer
@@ -556,4 +494,39 @@ void Graphics::CleanD3D(void)
     if (_backbuffer) _backbuffer->Release();
     if (_dev) _dev->Release();
     if (_devcon) _devcon->Release();
+}
+
+void Graphics::SpiralGalaxy(int N)
+{
+    // TODO: check if spawned particles are colliding
+    
+    // Create random orbiting entities
+    srand(static_cast<unsigned>(time(0)));
+
+    // Create a black hole
+    /*Entity* blackHole = new Entity();
+    blackHole->Create(0.5f, 55e9, _imageShaderResourceView, XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT2(0.0f, 0.0f));
+    blackHole->Initialize(_dev, _devcon, _cb_vs_vertexshader, _cb_ps_pixelshader);
+    _particles.push_back(blackHole);*/
+
+    float spawn_range = 300.0f;
+    float particle_radius = 0.5f;
+    double particle_mass = 1.988435e30;
+    XMFLOAT2 position = { 0.0f,0.0f };
+    XMFLOAT2 velocity = { 0.0,0.0 };
+
+    for (int i = 0; i < N; i++)
+    {
+        float x(0), y(0), r(0);
+        r = spawn_range * sqrt((double)rand() / RAND_MAX);
+
+        float theta = ((double)rand() / RAND_MAX) * 2 * PI;
+        x = position.x + r * cos(theta);
+        y = position.y + r * sin(theta);
+
+        Entity* newParticle = new Entity();
+        newParticle->Create(particle_radius, particle_mass, _imageShaderResourceView, XMFLOAT3(x, y, 0.0f), XMFLOAT2(y * velocity.x, -x * velocity.y));
+        newParticle->Initialize(_dev, _devcon, _cb_vs_vertexshader, _cb_ps_pixelshader);
+        _particles.push_back(newParticle);
+    }
 }

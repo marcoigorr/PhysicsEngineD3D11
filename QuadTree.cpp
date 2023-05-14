@@ -235,7 +235,7 @@ XMFLOAT2 QuadTreeNode::CalcAcc(Entity* p1, Entity* p2) const
 
 	if (r > s_attractionThreshold)
 	{
-		float k = BIG_G * p2->GetMass() / (r * r * r);
+		float k = gamma_1 * p2->GetMass() / (r * r * r);
 
 		acc.x = k * (p2Pos.x - p1Pos.x);
 		acc.y = k * (p2Pos.y - p1Pos.y);
@@ -284,7 +284,7 @@ XMFLOAT2 QuadTreeNode::CalcTreeForce(Entity* particle) const
 		if (d / r <= s_theta)
 		{
 			_bSubdivided = false;
-			k = BIG_G * _mass / (r * r * r);
+			k = gamma_1 * _mass / (r * r * r);
 			acc.x = k * (_cm.x - pPos.x);
 			acc.y = k * (_cm.y - pPos.y);
 		}
