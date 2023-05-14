@@ -523,7 +523,7 @@ void Graphics::SpiralGalaxy(int N)
 
     float spawn_range = 300.0f;
     float particle_radius = 0.5f;
-    double particle_mass = 1.988435e30;
+    double particle_mass = 1.988435e12;
     XMFLOAT2 position = { 0.0f,0.0f };
     XMFLOAT2 velocity = { 0.0,0.0 };
 
