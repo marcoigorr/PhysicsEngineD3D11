@@ -215,7 +215,7 @@ bool Graphics::InitD3D11(HWND hWnd)
     }
 
     _spriteBatch = std::make_unique<DirectX::SpriteBatch>(_devcon);
-    _spriteFont = std::make_unique<DirectX::SpriteFont>(_dev, L"Data\\Fonts\\arial_14.spritefont");
+    _spriteFont = std::make_unique<DirectX::SpriteFont>(_dev, L"Data\\Fonts\\arial_11.spritefont");
 
     // Texture sampler
     D3D11_SAMPLER_DESC sd;
@@ -273,7 +273,7 @@ bool Graphics::InitPipeline(void)
     {
         ErrorLogger::Log(hr, "Failed to create pixel shader.");
         return false;
-    }
+    }   
 
     // Creating input layout to let gpu organize data properly
     D3D11_INPUT_ELEMENT_DESC ied[] =
@@ -461,12 +461,11 @@ void Graphics::RenderFrame(void)
     // Font Render
     _spriteBatch->Begin();
     _spriteFont->DrawString(_spriteBatch.get(), fpsString.c_str(), DirectX::XMFLOAT2(0, 0), DirectX::Colors::White, 0.0f, DirectX::XMFLOAT2(0.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 1.0f));
-    _spriteFont->DrawString(_spriteBatch.get(), ("Theta: " + std::to_string(_qtRoot->GetTheta())).c_str(), DirectX::XMFLOAT2(0, 30), DirectX::Colors::White, 0.0f, DirectX::XMFLOAT2(0.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 1.0f));
-    _spriteFont->DrawString(_spriteBatch.get(), ("N: " + std::to_string(_qtRoot->GetNum())).c_str(), DirectX::XMFLOAT2(0, 60), DirectX::Colors::White, 0.0f, DirectX::XMFLOAT2(0.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 1.0f));
-    _spriteFont->DrawString(_spriteBatch.get(), ("Min (x, y): " + std::to_string((int)_qtRoot->GetMin().x) + ", " + std::to_string((int)_qtRoot->GetMin().y)).c_str(), DirectX::XMFLOAT2(0, 90), DirectX::Colors::White, 0.0f, DirectX::XMFLOAT2(0.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 1.0f));
-    _spriteFont->DrawString(_spriteBatch.get(), ("Max (x, y): " + std::to_string((int)_qtRoot->GetMax().x) + ", " + std::to_string((int)_qtRoot->GetMax().y)).c_str(), DirectX::XMFLOAT2(0, 120), DirectX::Colors::White, 0.0f, DirectX::XMFLOAT2(0.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 1.0f));
-    _spriteFont->DrawString(_spriteBatch.get(), ("Center of Mass (x, y): " + std::to_string(_qtRoot->GetCenterOfMass().x) + ", " + std::to_string(_qtRoot->GetCenterOfMass().y)).c_str(), DirectX::XMFLOAT2(0, 150), DirectX::Colors::White, 0.0f, DirectX::XMFLOAT2(0.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 1.0f));
-
+    _spriteFont->DrawString(_spriteBatch.get(), ("Theta: " + std::to_string(_qtRoot->GetTheta())).c_str(), DirectX::XMFLOAT2(0, 20), DirectX::Colors::White, 0.0f, DirectX::XMFLOAT2(0.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 1.0f));
+    _spriteFont->DrawString(_spriteBatch.get(), ("N: " + std::to_string(_qtRoot->GetNum())).c_str(), DirectX::XMFLOAT2(0, 40), DirectX::Colors::White, 0.0f, DirectX::XMFLOAT2(0.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 1.0f));
+    _spriteFont->DrawString(_spriteBatch.get(), ("Min (x, y): " + std::to_string((int)_qtRoot->GetMin().x) + ", " + std::to_string((int)_qtRoot->GetMin().y)).c_str(), DirectX::XMFLOAT2(0, 60), DirectX::Colors::White, 0.0f, DirectX::XMFLOAT2(0.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 1.0f));
+    _spriteFont->DrawString(_spriteBatch.get(), ("Max (x, y): " + std::to_string((int)_qtRoot->GetMax().x) + ", " + std::to_string((int)_qtRoot->GetMax().y)).c_str(), DirectX::XMFLOAT2(0, 80), DirectX::Colors::White, 0.0f, DirectX::XMFLOAT2(0.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 1.0f));
+    _spriteFont->DrawString(_spriteBatch.get(), ("Center of Mass (x, y): " + std::to_string(_qtRoot->GetCenterOfMass().x) + ", " + std::to_string(_qtRoot->GetCenterOfMass().y)).c_str(), DirectX::XMFLOAT2(0, 100), DirectX::Colors::White, 0.0f, DirectX::XMFLOAT2(0.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 1.0f));
     _spriteBatch->End();
 
     // Switch back buffer and front buffer
@@ -521,7 +520,7 @@ void Graphics::SpiralGalaxy(int N)
     blackHole->Initialize(_dev, _devcon, _cb_vs_vertexshader, _cb_ps_pixelshader);
     _particles.push_back(blackHole);*/
 
-    float spawn_range = 300.0f;
+    float spawn_range = 200.0f;
     float particle_radius = 0.5f;
     double particle_mass = 1.988435e12;
     XMFLOAT2 position = { 0.0f,0.0f };

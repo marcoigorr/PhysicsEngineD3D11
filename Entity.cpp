@@ -14,7 +14,7 @@ bool Entity::Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceContext
 	_dev = device;
 	_devcon = deviceContext;
 	_cb_vs_vertexshader = &cb_vs_vertexshader;
-    _cb_ps_pixelshader = &cb_ps_pixelshader;
+    _cb_ps_pixelshader = &cb_ps_pixelshader; 
 
     // create a square using the VERTEX struct
     Vertex v[] =
