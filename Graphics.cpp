@@ -520,11 +520,11 @@ void Graphics::SpiralGalaxy(int N)
     blackHole->Initialize(_dev, _devcon, _cb_vs_vertexshader, _cb_ps_pixelshader);
     _particles.push_back(blackHole);*/
 
-    float spawn_range = 200.0f;
+    float spawn_range = 100.0f;
     float particle_radius = 0.5f;
     double particle_mass = 1.988435e12;
     XMFLOAT2 position = { 0.0f,0.0f };
-    XMFLOAT2 velocity = { 0.0,0.0 };
+    XMFLOAT2 velocity = { 0.001,0.001 };
 
     for (int i = 0; i < N; i++)
     {

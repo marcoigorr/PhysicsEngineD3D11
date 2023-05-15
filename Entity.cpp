@@ -61,6 +61,7 @@ void Entity::Draw(const XMMATRIX& viewProjectionMatrix)
         return;
 	_devcon->VSSetConstantBuffers(0, 1, _cb_vs_vertexshader->GetAddressOf());
 
+    _cb_ps_pixelshader->_data.p_velocity = _velocity; // pass velocity to pixel shader
     _cb_ps_pixelshader->ApplyChanges();
     _devcon->PSSetConstantBuffers(0, 1, _cb_ps_pixelshader->GetAddressOf());
 

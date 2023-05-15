@@ -6,8 +6,8 @@ struct CB_VS_vertexshader
 	DirectX::XMMATRIX mat;
 };
 
-// Blending
 struct CB_PS_pixelshader
 {
 	float alpha = 1.0f;
+	DirectX::XMFLOAT2 p_velocity; // particle velocity (for color change)
 };
