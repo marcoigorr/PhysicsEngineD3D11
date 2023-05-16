@@ -61,7 +61,11 @@ void Entity::Draw(const XMMATRIX& viewProjectionMatrix)
         return;
 	_devcon->VSSetConstantBuffers(0, 1, _cb_vs_vertexshader->GetAddressOf());
 
-    _cb_ps_pixelshader->_data.p_velocity = _velocity; // pass velocity to pixel shader
+
+    double magnitudeFloat2 = sqrt((_velocity.x * _velocity.x) + (_velocity.y * _velocity.y));
+    _cb_ps_pixelshader->_data.v_magnitude = magnitudeFloat2; // pass value to pixel shader
+
+
     _cb_ps_pixelshader->ApplyChanges();
     _devcon->PSSetConstantBuffers(0, 1, _cb_ps_pixelshader->GetAddressOf());
 
@@ -153,12 +157,14 @@ void Entity::UpdateVelocity(float newXVelocity, float newYVelocity)
 {
     _velocity.x += newXVelocity;
     _velocity.y += newYVelocity;
+    _velocityVector += XMLoadFloat2(&_velocity);
 }
 
 void Entity::SetVelocity(const XMFLOAT2& velocity)
 {
     _velocity.x = velocity.x;
     _velocity.y = velocity.y;
+    _velocityVector = XMLoadFloat2(&_velocity);
 }
 
 void Entity::SetVelocity(float x, float y)

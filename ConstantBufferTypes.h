@@ -8,6 +8,5 @@ struct CB_VS_vertexshader
 
 struct CB_PS_pixelshader
 {
-	float alpha = 1.0f;
-	DirectX::XMFLOAT2 p_velocity; // particle velocity (for color change)
+	double v_magnitude; // particle vector module (for color change) [0, 1]
 };

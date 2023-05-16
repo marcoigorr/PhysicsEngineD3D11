@@ -61,6 +61,7 @@ private:
 	XMVECTOR _posVector;
 	XMFLOAT3 _pos;
 
+	XMVECTOR _velocityVector;
 	XMFLOAT2 _velocity;
 
 	float _radius;

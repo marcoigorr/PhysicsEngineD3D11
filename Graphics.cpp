@@ -353,7 +353,10 @@ void Graphics::RenderFrame(void)
     _devcon->PSSetShader(_pPS, nullptr, 0);
 
     // Camera
-    _camera.SetPosition(_cameraPos);
+    static bool follow = true;
+
+    if (!follow)
+        _camera.SetPosition(_cameraPos);
 
     // If there is at least a particle in the quadtree
     if (_particles.size())
@@ -372,8 +375,19 @@ void Graphics::RenderFrame(void)
         _qtRoot->ComputeMassDistribution();
 
         // Draw particles
-        _qtRoot->DrawEntities(_camera.GetViewMatrix() * _camera.GetProjectionMatrix());
-    }
+        //_qtRoot->DrawEntities(_camera.GetViewMatrix() * _camera.GetProjectionMatrix());
+
+        for (Entity* p : _particles)
+        {
+            p->Draw(_camera.GetViewMatrix() * _camera.GetProjectionMatrix());
+        }
+
+        if (follow)
+        {
+            _camera.SetPosition(center.x, center.y, _cameraPos.z);
+            _cameraPos = _camera.GetPositionFloat3();
+        }            
+    }   
 
     // Text / FPS
     fpsCount += 1;
@@ -418,7 +432,7 @@ void Graphics::RenderFrame(void)
         // Camera transforms
         if (ImGui::CollapsingHeader("Camera", ImGuiTreeNodeFlags_FramePadding))
         {
-            if (ImGui::BeginChild("camera conf", ImVec2(0, 130), true))
+            if (ImGui::BeginChild("camera conf", ImVec2(0, 150), true))
             {
                 ImGui::DragFloat("X", &_cameraPos.x, 0.1f);
                 ImGui::DragFloat("Y", &_cameraPos.y, 0.1f);
@@ -430,6 +444,10 @@ void Graphics::RenderFrame(void)
                 {
                     _cameraPos = _camera.GetDefPosition();
                 }
+
+                ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 10);
+                
+                ImGui::Checkbox("Follow center of mass", &follow);
             }
             ImGui::EndChild();
         }
@@ -515,21 +533,21 @@ void Graphics::SpiralGalaxy(int N)
     srand(static_cast<unsigned>(time(0)));
 
     // Create a black hole
-    /*Entity* blackHole = new Entity();
-    blackHole->Create(0.5f, 55e9, _imageShaderResourceView, XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT2(0.0f, 0.0f));
+    Entity* blackHole = new Entity();
+    blackHole->Create(0.5f, 1e16, _imageShaderResourceView, XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT2(0.0f, 0.0f));
     blackHole->Initialize(_dev, _devcon, _cb_vs_vertexshader, _cb_ps_pixelshader);
-    _particles.push_back(blackHole);*/
+    _particles.push_back(blackHole);
 
-    float spawn_range = 100.0f;
-    float particle_radius = 0.5f;
+    float spawn_range = 50.0f;
+    float particle_radius = 2.0f;
     double particle_mass = 1.988435e12;
     XMFLOAT2 position = { 0.0f,0.0f };
-    XMFLOAT2 velocity = { 0.001,0.001 };
+    XMFLOAT2 velocity = { 0.015,0.015 };
 
     for (int i = 0; i < N; i++)
     {
         float x(0), y(0), r(0);
-        r = spawn_range * sqrt((double)rand() / RAND_MAX);
+        r = spawn_range * sqrt((double)rand() / RAND_MAX) + 40.0f;
 
         float theta = ((double)rand() / RAND_MAX) * 2 * PI;
         x = position.x + r * cos(theta);

@@ -1,6 +1,6 @@
 cbuffer velocityBuffer : register(b0)
 {
-    float2 velocity;
+    double v_magnitude;
 }
 
 struct PS_INPUT
@@ -16,10 +16,11 @@ float4 main(PS_INPUT input) : SV_TARGET
 {
     float4 pixelColor = objTexture.Sample(objSamplerState, input.inTexCoord);
 
-    // Debug: see alpha channel 
-    pixelColor[0] = 0;
-    pixelColor[1] = 255;
-    pixelColor[2] = 255;
+    // rgb
+
+    pixelColor[0] = v_magnitude;
+    pixelColor[1] = v_magnitude * 0.4;
+    pixelColor[2] = 1 - (v_magnitude * 0.5);
     
     return pixelColor;
 }
