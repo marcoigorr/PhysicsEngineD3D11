@@ -336,7 +336,7 @@ Camera& Graphics::GetCamera()
 void Graphics::RenderFrame(void) 
 {
     // Clear the back buffer to a color
-    _devcon->ClearRenderTargetView(_backbuffer, D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f));
+    _devcon->ClearRenderTargetView(_backbuffer, D3DXCOLOR(_bgCcolor[0], _bgCcolor[1], _bgCcolor[2], 1.0f));
 
     // Refresh depth stencil view
     _devcon->ClearDepthStencilView(_depthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);
@@ -427,7 +427,26 @@ void Graphics::RenderFrame(void)
             ImGui::Text(fpsString.c_str());
 
             ImGui::EndMenuBar();
-        }      
+        }  
+
+        // Scene configuration
+        if (ImGui::CollapsingHeader("Scene", ImGuiTreeNodeFlags_FramePadding))
+        {
+            if (ImGui::BeginChild("scene conf", ImVec2(0, 150), true))
+            {
+                ImGui::ColorEdit3("Background", _bgCcolor);
+
+                ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 10);
+
+                if (ImGui::Button("Reset color"))
+                {
+                    _bgCcolor[0] = 0.02f;
+                    _bgCcolor[1] = 0.02f;
+                    _bgCcolor[2] = 0.032f;
+                }
+            }
+            ImGui::EndChild();
+        }
 
         // Camera transforms
         if (ImGui::CollapsingHeader("Camera", ImGuiTreeNodeFlags_FramePadding))
@@ -498,13 +517,9 @@ void Graphics::CleanD3D(void)
 
     // Close and release all existing COM objects
     if (_particles.size())
-    {
         for (int i = 0; i < _particles.size(); i++)
-        {
             if (_particles[i]) _particles[i]->Release();
-        }
 
-    }
     if (_imageShaderResourceView) _imageShaderResourceView->Release();
     if (_spriteBatch) _spriteBatch.release();
     if (_spriteFont) _spriteFont.release();
@@ -525,6 +540,28 @@ void Graphics::CleanD3D(void)
     if (_devcon) _devcon->Release();
 }
 
+// Necessary velocity to escape M1 gravity
+XMFLOAT2 Graphics::GetOrbitalVelocity(const Entity* p1, const Entity* p2)
+{
+    double x1 = p1->GetPositionFloat3().x,
+           y1 = p1->GetPositionFloat3().y,
+           M1 = p1->GetMass();
+    double x2 = p2->GetPositionFloat3().x,
+           y2 = p2->GetPositionFloat3().y;
+
+    double xDistance = x1 - x2,
+           yDistance = y1 - y2;
+
+    double r = sqrt((xDistance * xDistance) + (yDistance * yDistance)); // distance between p1 and p2
+
+    double v = sqrt(_qtRoot->gamma_1 * M1 / r); // orbital velocity
+
+    double vx = (yDistance / r) * v,
+           vy = (-xDistance / r) * v; 
+
+    return XMFLOAT2(vx, vy);
+}
+
 void Graphics::SpiralGalaxy(int N)
 {
     // TODO: check if spawned particles are colliding
@@ -538,24 +575,27 @@ void Graphics::SpiralGalaxy(int N)
     blackHole->Initialize(_dev, _devcon, _cb_vs_vertexshader, _cb_ps_pixelshader);
     _particles.push_back(blackHole);
 
-    float spawn_range = 50.0f;
+    float spawn_range = 60.0f;
     float particle_radius = 2.0f;
-    double particle_mass = 1.988435e12;
+    double particle_mass = 1.988435e11;
     XMFLOAT2 position = { 0.0f,0.0f };
-    XMFLOAT2 velocity = { 0.015,0.015 };
+    XMFLOAT2 velocity = { 0.0f,0.0f };
 
     for (int i = 0; i < N; i++)
     {
         float x(0), y(0), r(0);
-        r = spawn_range * sqrt((double)rand() / RAND_MAX) + 40.0f;
+        r = spawn_range * sqrt((double)rand() / RAND_MAX) + 20.0f;
 
         float theta = ((double)rand() / RAND_MAX) * 2 * PI;
         x = position.x + r * cos(theta);
         y = position.y + r * sin(theta);
 
         Entity* newParticle = new Entity();
-        newParticle->Create(particle_radius, particle_mass, _imageShaderResourceView, XMFLOAT3(x, y, 0.0f), XMFLOAT2(y * velocity.x, -x * velocity.y));
+        newParticle->Create(particle_radius, particle_mass, _imageShaderResourceView, XMFLOAT3(x, y, 0.0f), XMFLOAT2(0.0f,0.0f));
         newParticle->Initialize(_dev, _devcon, _cb_vs_vertexshader, _cb_ps_pixelshader);
         _particles.push_back(newParticle);
+
+        velocity = GetOrbitalVelocity(blackHole, newParticle);
+        newParticle->SetVelocity(velocity);
     }
 }

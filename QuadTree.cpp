@@ -223,7 +223,7 @@ XMFLOAT2 QuadTreeNode::CalcAcc(Entity* p1, Entity* p2) const
 {
 	XMFLOAT2 acc(0.0f, 0.0f);
 
-	if (&p1 == &p2)
+	if (p1 == p2)
 	{
 		return acc;
 	}
@@ -231,7 +231,10 @@ XMFLOAT2 QuadTreeNode::CalcAcc(Entity* p1, Entity* p2) const
 	const XMFLOAT3& p1Pos(p1->GetPositionFloat3());
 	const XMFLOAT3& p2Pos(p2->GetPositionFloat3());
 
-	float r = sqrt((p1Pos.x - p2Pos.x) * (p1Pos.x - p2Pos.x) + (p1Pos.y - p2Pos.y) * (p1Pos.y - p2Pos.y) + s_soft);
+	float xDistance = p1Pos.x - p2Pos.x;
+	float yDistance = p1Pos.y - p2Pos.y;
+
+	float r = sqrt((xDistance * xDistance) + (yDistance * yDistance) + s_soft);
 
 	if (r > s_attractionThreshold)
 	{
@@ -244,6 +247,13 @@ XMFLOAT2 QuadTreeNode::CalcAcc(Entity* p1, Entity* p2) const
 	{
 		acc.x = acc.y = 0.0f;
 	}
+
+	float magnitude = sqrtf((acc.x * acc.x) + (acc.y * acc.y));
+	if (acc.x >= 0.7f || acc.y >= 0.7f)
+	{
+		acc.x = acc.y = 0.0f;
+	}
+
 
 	return acc;
 }

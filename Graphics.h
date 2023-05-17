@@ -34,11 +34,13 @@ public:
 
 	Camera& GetCamera();
 
+	XMFLOAT2 GetOrbitalVelocity(const Entity* p1, const Entity* p2);
 	void SpiralGalaxy(int N);
   
 private:
 	int _wWidth;
 	int _wHeight;
+	float _bgCcolor[3] = { 0.02,0.02,0.032 };	// kind of grey
 
 	IDXGISwapChain* _swapchain;					// pointer to swap chain interface
 	ID3D11Device* _dev;							// pointer to Direct3D device interface
