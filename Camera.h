@@ -22,6 +22,8 @@ public:
 	void AdjustPosition(const XMVECTOR& pos);
 	void AdjustPosition(float x, float y, float z);
 
+	void Track(float x, float y, float z);
+
 private:
 	void UpdateViewMatrix();
 	XMVECTOR _posVector;

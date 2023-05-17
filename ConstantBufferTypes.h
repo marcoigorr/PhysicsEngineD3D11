@@ -8,5 +8,8 @@ struct CB_VS_vertexshader
 
 struct CB_PS_pixelshader
 {
+	double r_mod;
+	double g_mod;
+	double b_mod;
 	double v_magnitude; // particle vector module (for color change) [0, 1]
 };

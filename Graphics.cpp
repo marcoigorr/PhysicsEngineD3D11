@@ -7,6 +7,8 @@
 
 bool Graphics::Initialize(HWND hWnd, int width, int height)
 {
+    _INIFile = new mINI::INIFile("config.ini");
+
     _wWidth = width;
     _wHeight = height;
 
@@ -336,6 +338,7 @@ Camera& Graphics::GetCamera()
 void Graphics::RenderFrame(void) 
 {
     // Clear the back buffer to a color
+    static float _bgCcolor[3] = { 0.02,0.02,0.032 };
     _devcon->ClearRenderTargetView(_backbuffer, D3DXCOLOR(_bgCcolor[0], _bgCcolor[1], _bgCcolor[2], 1.0f));
 
     // Refresh depth stencil view
@@ -353,10 +356,10 @@ void Graphics::RenderFrame(void)
     _devcon->PSSetShader(_pPS, nullptr, 0);
 
     // Camera
-    static bool follow = true;
-
-    if (!follow)
+    if (!_cameraTracking)
         _camera.SetPosition(_cameraPos);
+
+    static float ps_mods_color[3] = { 1.000000, 0.718000, 0.781000 };
 
     // If there is at least a particle in the quadtree
     if (_particles.size())
@@ -379,12 +382,13 @@ void Graphics::RenderFrame(void)
 
         for (Entity* p : _particles)
         {
+            p->SetColorModifiers(ps_mods_color[0], ps_mods_color[1], ps_mods_color[2]);
             p->Draw(_camera.GetViewMatrix() * _camera.GetProjectionMatrix());
         }
 
-        if (follow)
+        if (_cameraTracking)
         {
-            _camera.SetPosition(center.x, center.y, _cameraPos.z);
+            _camera.Track(center.x, center.y, _cameraPos.z);
             _cameraPos = _camera.GetPositionFloat3();
         }            
     }   
@@ -404,10 +408,21 @@ void Graphics::RenderFrame(void)
         ImGui::Begin("Physics Engine", nullptr, ImGuiWindowFlags_MenuBar);
         if (ImGui::BeginMenuBar())
         {
-            // Scene menu
-            if (ImGui::BeginMenu("Scene"))
+            // File menu
+            if (ImGui::BeginMenu("File"))
             {
-                if (ImGui::MenuItem("Clear Scene", "Ctrl+R")) 
+                if (ImGui::MenuItem("Save Settings", "Ctrl+S"))
+                {
+                    _INIFile->write(_INIData); // save to config.ini
+                }
+
+                ImGui::EndMenu();
+            }
+
+            // Level menu
+            if (ImGui::BeginMenu("Level"))
+            {
+                if (ImGui::MenuItem("Clear level", "Ctrl+R")) 
                 { 
                     for (Entity* p : _particles)
                         p->Release();
@@ -417,8 +432,8 @@ void Graphics::RenderFrame(void)
                 ImGui::EndMenu();
             }
 
-            // Pause update
-            ImGui::SetCursorPosX(ImGui::GetContentRegionAvail().x - 70);
+            // Pause engine update
+            ImGui::SetCursorPosX(ImGui::GetContentRegionAvail().x - 60);
             ImGui::Checkbox("Pause", &_editing);
 
             ImGui::Spacing();
@@ -434,16 +449,14 @@ void Graphics::RenderFrame(void)
         {
             if (ImGui::BeginChild("scene conf", ImVec2(0, 150), true))
             {
+                // Background color
                 ImGui::ColorEdit3("Background", _bgCcolor);
+                _INIData["Window"]["Backgroud"] = std::to_string(_bgCcolor[0]) + ", " + std::to_string(_bgCcolor[1]) + ", " + std::to_string(_bgCcolor[2]);
 
+                // pixel shader modifiers
                 ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 10);
-
-                if (ImGui::Button("Reset color"))
-                {
-                    _bgCcolor[0] = 0.02f;
-                    _bgCcolor[1] = 0.02f;
-                    _bgCcolor[2] = 0.032f;
-                }
+                ImGui::SliderFloat3("ParticleColorMod", ps_mods_color, -1.0f, 2.0f);
+                _INIData["pixel shader"]["Color Mod"] = std::to_string(ps_mods_color[0]) + ", " + std::to_string(ps_mods_color[1]) + ", " + std::to_string(ps_mods_color[2]);
             }
             ImGui::EndChild();
         }
@@ -466,12 +479,12 @@ void Graphics::RenderFrame(void)
 
                 ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 10);
                 
-                ImGui::Checkbox("Follow center of mass", &follow);
+                ImGui::Checkbox(" Camera tracking", &_cameraTracking);
             }
             ImGui::EndChild();
         }
 
-        // Scene configuration
+        // Level configuration
         if (ImGui::CollapsingHeader("Spawn", ImGuiTreeNodeFlags_FramePadding))
         {
             static int N(0);
@@ -575,7 +588,7 @@ void Graphics::SpiralGalaxy(int N)
     blackHole->Initialize(_dev, _devcon, _cb_vs_vertexshader, _cb_ps_pixelshader);
     _particles.push_back(blackHole);
 
-    float spawn_range = 60.0f;
+    float spawn_range = 100.0f;
     float particle_radius = 2.0f;
     double particle_mass = 1.988435e11;
     XMFLOAT2 position = { 0.0f,0.0f };

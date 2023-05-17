@@ -79,7 +79,7 @@ private:
 	QuadTreeNode* _quadNode[4];
 
 public:
-	double s_theta = 0.9;
+	double s_theta = 1.6;
 	double s_soft = 0.1 * 0.1;
 	float s_range = 400.0f;
 	float s_attractionThreshold = 1.0f;

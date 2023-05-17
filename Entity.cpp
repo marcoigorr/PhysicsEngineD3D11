@@ -61,10 +61,12 @@ void Entity::Draw(const XMMATRIX& viewProjectionMatrix)
         return;
 	_devcon->VSSetConstantBuffers(0, 1, _cb_vs_vertexshader->GetAddressOf());
 
-
     double magnitude = sqrt((_velocity.x * _velocity.x) + (_velocity.y * _velocity.y)); // velocity vector module
     _cb_ps_pixelshader->_data.v_magnitude = magnitude; // pass value to pixel shader
 
+    _cb_ps_pixelshader->_data.r_mod = _colorMod.r;
+    _cb_ps_pixelshader->_data.g_mod = _colorMod.g;
+    _cb_ps_pixelshader->_data.b_mod = _colorMod.b;
 
     _cb_ps_pixelshader->ApplyChanges();
     _devcon->PSSetConstantBuffers(0, 1, _cb_ps_pixelshader->GetAddressOf());
@@ -201,4 +203,16 @@ void Entity::SetMass(float mass)
 void Entity::UpdateMass(float mass)
 {
     _mass += mass;
+}
+
+EColor Entity::GetColorModifiers() const
+{
+    return _colorMod;
+}
+
+void Entity::SetColorModifiers(double r, double g, double b)
+{
+    _colorMod.r = r;
+    _colorMod.g = g;
+    _colorMod.b = b;
 }

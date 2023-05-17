@@ -20,6 +20,7 @@
 #include "Entity.h"
 #include "QuadTree.h"
 #include <cstdlib>
+#include "ini.h"
 
 class Graphics
 {
@@ -38,9 +39,11 @@ public:
 	void SpiralGalaxy(int N);
   
 private:
+	mINI::INIFile* _INIFile;
+	mINI::INIStructure _INIData;				// structure hold data for config.ini
+
 	int _wWidth;
 	int _wHeight;
-	float _bgCcolor[3] = { 0.02,0.02,0.032 };	// kind of grey
 
 	IDXGISwapChain* _swapchain;					// pointer to swap chain interface
 	ID3D11Device* _dev;							// pointer to Direct3D device interface
@@ -74,6 +77,7 @@ private:
 
 	Camera _camera;
 	XMFLOAT3 _cameraPos;
+	bool _cameraTracking = true;
 
 public:	
 	bool _editing = true;

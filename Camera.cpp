@@ -79,6 +79,11 @@ void Camera::AdjustPosition(float x, float y, float z)
 	this->UpdateViewMatrix();
 }
 
+void Camera::Track(float x, float y, float z)
+{
+	SetPosition(x, y, z);
+}
+
 void Camera::UpdateViewMatrix()
 {
 	//Calculate camera rotation matrix

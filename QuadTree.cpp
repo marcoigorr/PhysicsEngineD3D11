@@ -248,13 +248,6 @@ XMFLOAT2 QuadTreeNode::CalcAcc(Entity* p1, Entity* p2) const
 		acc.x = acc.y = 0.0f;
 	}
 
-	float magnitude = sqrtf((acc.x * acc.x) + (acc.y * acc.y));
-	if (acc.x >= 0.7f || acc.y >= 0.7f)
-	{
-		acc.x = acc.y = 0.0f;
-	}
-
-
 	return acc;
 }
 

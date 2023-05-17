@@ -1,5 +1,8 @@
-cbuffer velocityBuffer : register(b0)
+cbuffer particleBuffer : register(b0)
 {
+    double r_mod;
+    double g_mod;
+    double b_mod;
     double v_magnitude;
 }
 
@@ -17,9 +20,9 @@ float4 main(PS_INPUT input) : SV_TARGET
     float4 pixelColor = objTexture.Sample(objSamplerState, input.inTexCoord);
 
     // rgb
-    pixelColor[0] = v_magnitude;
-    pixelColor[1] = v_magnitude * 0.2;
-    pixelColor[2] = 1 - (v_magnitude);
+    pixelColor[0] = v_magnitude * r_mod;
+    pixelColor[1] = 1 - (v_magnitude * g_mod);
+    pixelColor[2] = 1 - (v_magnitude * b_mod);
     
     return pixelColor;
 }

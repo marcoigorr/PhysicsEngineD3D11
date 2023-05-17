@@ -8,6 +8,11 @@
 
 using namespace DirectX;
 
+struct EColor
+{
+	double r, g, b;
+};
+
 class Entity
 {
 public:
@@ -44,6 +49,9 @@ public:
 	void SetMass(float mass);
 	void UpdateMass(float mass);
 
+	EColor GetColorModifiers() const;
+	void SetColorModifiers(double red, double green, double blue);
+
 private:
 	void UpdateWorldMatrix();
 
@@ -66,6 +74,8 @@ private:
 
 	float _radius;
 	float _mass;
+
+	EColor _colorMod;
 
 	const XMVECTOR _DEFAULT_FORWARD_VECTOR =	XMVectorSet( 0.0f, 0.0f,  1.0f, 0.0f);
 	const XMVECTOR _DEFAULT_UP_VECTOR =			XMVectorSet( 0.0f, 1.0f,  0.0f, 0.0f);
