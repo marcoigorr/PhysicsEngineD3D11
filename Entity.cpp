@@ -14,7 +14,7 @@ bool Entity::Initialize(ID3D11Device* device, ID3D11DeviceContext* deviceContext
 	_dev = device;
 	_devcon = deviceContext;
 	_cb_vs_vertexshader = &cb_vs_vertexshader;
-    _cb_ps_pixelshader = &cb_ps_pixelshader;
+    _cb_ps_pixelshader = &cb_ps_pixelshader; 
 
     // create a square using the VERTEX struct
     Vertex v[] =
@@ -60,6 +60,13 @@ void Entity::Draw(const XMMATRIX& viewProjectionMatrix)
     if (!_cb_vs_vertexshader->ApplyChanges())
         return;
 	_devcon->VSSetConstantBuffers(0, 1, _cb_vs_vertexshader->GetAddressOf());
+
+    double magnitude = sqrt((_velocity.x * _velocity.x) + (_velocity.y * _velocity.y)); // velocity vector module
+    _cb_ps_pixelshader->_data.v_magnitude = magnitude; // pass value to pixel shader
+
+    _cb_ps_pixelshader->_data.r_mod = _colorMod.r;
+    _cb_ps_pixelshader->_data.g_mod = _colorMod.g;
+    _cb_ps_pixelshader->_data.b_mod = _colorMod.b;
 
     _cb_ps_pixelshader->ApplyChanges();
     _devcon->PSSetConstantBuffers(0, 1, _cb_ps_pixelshader->GetAddressOf());
@@ -152,12 +159,14 @@ void Entity::UpdateVelocity(float newXVelocity, float newYVelocity)
 {
     _velocity.x += newXVelocity;
     _velocity.y += newYVelocity;
+    _velocityVector += XMLoadFloat2(&_velocity);
 }
 
 void Entity::SetVelocity(const XMFLOAT2& velocity)
 {
     _velocity.x = velocity.x;
     _velocity.y = velocity.y;
+    _velocityVector = XMLoadFloat2(&_velocity);
 }
 
 void Entity::SetVelocity(float x, float y)
@@ -194,4 +203,16 @@ void Entity::SetMass(float mass)
 void Entity::UpdateMass(float mass)
 {
     _mass += mass;
+}
+
+EColor Entity::GetColorModifiers() const
+{
+    return _colorMod;
+}
+
+void Entity::SetColorModifiers(double r, double g, double b)
+{
+    _colorMod.r = r;
+    _colorMod.g = g;
+    _colorMod.b = b;
 }

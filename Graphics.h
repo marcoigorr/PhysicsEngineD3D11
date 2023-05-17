@@ -20,6 +20,7 @@
 #include "Entity.h"
 #include "QuadTree.h"
 #include <cstdlib>
+#include "ini.h"
 
 class Graphics
 {
@@ -32,12 +33,18 @@ public:
 	void CleanD3D(void);								// closes Direct3D and releases memory
 	void RenderFrame(void);								// renders a single frame
 
-	QuadTreeNode* GetQuadTreeRoot() const;
-	std::vector<Entity*> GetParticles() const;
+	Camera& GetCamera();
 
-	void CreateEntities();
+	XMFLOAT2 GetOrbitalVelocity(const Entity* p1, const Entity* p2);
+	void SpiralGalaxy(int N);
   
 private:
+	mINI::INIFile* _INIFile;
+	mINI::INIStructure _INIData;				// structure hold data for config.ini
+
+	int _wWidth;
+	int _wHeight;
+
 	IDXGISwapChain* _swapchain;					// pointer to swap chain interface
 	ID3D11Device* _dev;							// pointer to Direct3D device interface
 	ID3D11DeviceContext* _devcon;				// pointer to Direct3D device context
@@ -63,15 +70,18 @@ private:
 	ID3D11ShaderResourceView* _imageShaderResourceView;
 
 	Timer _fpsTimer;
+	int fpsCount = 0;
+	std::string fpsString = "FPS: 0";
+
 	ImGuiWindow* _imgui;
 
-	int _wWidth;
-	int _wHeight;
-
-public:
 	Camera _camera;
-	std::vector<Entity*> _particles;
-	QuadTreeNode* _root = new QuadTreeNode(XMFLOAT2(-100.0f, 100.0f), XMFLOAT2(100.0f, -100.0f), nullptr);	// the root node of the barnes hut tree
+	XMFLOAT3 _cameraPos;
+	bool _cameraTracking = true;
 
+public:	
 	bool _editing = true;
+
+	QuadTreeNode* _qtRoot;
+	std::vector<Entity*> _particles;
 };

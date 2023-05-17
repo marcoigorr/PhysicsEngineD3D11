@@ -1,6 +1,9 @@
-cbuffer alphaBuffer : register(b0)
+cbuffer particleBuffer : register(b0)
 {
-    float alpha;
+    double r_mod;
+    double g_mod;
+    double b_mod;
+    double v_magnitude;
 }
 
 struct PS_INPUT
@@ -16,10 +19,10 @@ float4 main(PS_INPUT input) : SV_TARGET
 {
     float4 pixelColor = objTexture.Sample(objSamplerState, input.inTexCoord);
 
-    // Debug: see alpha channel 
-    /* pixelColor[0] = pixelColor[3];
-    pixelColor[1] = pixelColor[2] = 0;
-    pixelColor[3] = 1; */
+    // rgb
+    pixelColor[0] = v_magnitude * r_mod;
+    pixelColor[1] = 1 - (v_magnitude * g_mod);
+    pixelColor[2] = 1 - (v_magnitude * b_mod);
     
     return pixelColor;
 }

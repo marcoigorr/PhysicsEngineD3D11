@@ -223,7 +223,7 @@ XMFLOAT2 QuadTreeNode::CalcAcc(Entity* p1, Entity* p2) const
 {
 	XMFLOAT2 acc(0.0f, 0.0f);
 
-	if (&p1 == &p2)
+	if (p1 == p2)
 	{
 		return acc;
 	}
@@ -231,11 +231,14 @@ XMFLOAT2 QuadTreeNode::CalcAcc(Entity* p1, Entity* p2) const
 	const XMFLOAT3& p1Pos(p1->GetPositionFloat3());
 	const XMFLOAT3& p2Pos(p2->GetPositionFloat3());
 
-	float r = sqrt((p1Pos.x - p2Pos.x) * (p1Pos.x - p2Pos.x) + (p1Pos.y - p2Pos.y) * (p1Pos.y - p2Pos.y));
+	float xDistance = p1Pos.x - p2Pos.x;
+	float yDistance = p1Pos.y - p2Pos.y;
 
-	if (r > 30.0f)
+	float r = sqrt((xDistance * xDistance) + (yDistance * yDistance) + s_soft);
+
+	if (r > s_attractionThreshold)
 	{
-		float k = BIG_G * p2->GetMass() / (r * r * r);
+		float k = gamma_1 * p2->GetMass() / (r * r * r);
 
 		acc.x = k * (p2Pos.x - p1Pos.x);
 		acc.y = k * (p2Pos.y - p1Pos.y);
@@ -284,7 +287,7 @@ XMFLOAT2 QuadTreeNode::CalcTreeForce(Entity* particle) const
 		if (d / r <= s_theta)
 		{
 			_bSubdivided = false;
-			k = BIG_G * _mass / (r * r * r);
+			k = gamma_1 * _mass / (r * r * r);
 			acc.x = k * (_cm.x - pPos.x);
 			acc.y = k * (_cm.y - pPos.y);
 		}
@@ -310,15 +313,12 @@ XMFLOAT2 QuadTreeNode::CalcTreeForce(Entity* particle) const
 
 void QuadTreeNode::DrawEntities(const XMMATRIX& viewProjectionMatrix)
 {
-	if (_parent == nullptr)
-		_assignedEntity->Draw(viewProjectionMatrix);
-
-	if (_assignedEntity != nullptr)
+	if (_assignedEntity)
 		_assignedEntity->Draw(viewProjectionMatrix);
 
 	for (int i = 0; i < 4; i++)
 	{
-		if (_quadNode[i] != nullptr)
+		if (_quadNode[i])
 			_quadNode[i]->DrawEntities(viewProjectionMatrix);
 	}
 }
@@ -336,6 +336,9 @@ void QuadTreeNode::ReleaseEntities()
 		if (_quadNode[i] != nullptr)
 			_quadNode[i]->ReleaseEntities();
 	}
+	
+	for (Entity* r : s_renegades)
+		if (r) r->Release();
 }
 
 QuadTreeNode::~QuadTreeNode()

@@ -2,9 +2,13 @@
 
 #define e 2.71828182845904523536
 #define PI 3.14159265
+#define SUN_MASS 1.988435e30
+#define PARSEC_IN_METER 3.08567758129e16
 
 bool Graphics::Initialize(HWND hWnd, int width, int height)
 {
+    _INIFile = new mINI::INIFile("config.ini");
+
     _wWidth = width;
     _wHeight = height;
 
@@ -213,7 +217,7 @@ bool Graphics::InitD3D11(HWND hWnd)
     }
 
     _spriteBatch = std::make_unique<DirectX::SpriteBatch>(_devcon);
-    _spriteFont = std::make_unique<DirectX::SpriteFont>(_dev, L"Data\\Fonts\\arial_14.spritefont");
+    _spriteFont = std::make_unique<DirectX::SpriteFont>(_dev, L"Data\\Fonts\\arial_11.spritefont");
 
     // Texture sampler
     D3D11_SAMPLER_DESC sd;
@@ -271,7 +275,7 @@ bool Graphics::InitPipeline(void)
     {
         ErrorLogger::Log(hr, "Failed to create pixel shader.");
         return false;
-    }
+    }   
 
     // Creating input layout to let gpu organize data properly
     D3D11_INPUT_ELEMENT_DESC ied[] =
@@ -317,42 +321,25 @@ bool Graphics::InitGraphicsD3D11(void)
         return false;
     }
 
-    this->CreateEntities();
-
     _camera.SetProjectionValues(90.0f, static_cast<float>(_wWidth) / static_cast<float>(_wHeight), 0.1f, 1000.0f);
+    _cameraPos = _camera.GetDefPosition();
 
+    float initialRange = 100.0f;
+    _qtRoot = new QuadTreeNode(XMFLOAT2(-initialRange, initialRange), XMFLOAT2(initialRange, -initialRange), nullptr);
+    
     return true;
 }
 
-void Graphics::CreateEntities()
+Camera& Graphics::GetCamera()
 {
-    // Create random orbiting entities
-    srand(static_cast<unsigned>(time(0)));
-
-    Entity* blackHole = new Entity();
-    blackHole->Create(0.5f, 55e9, _imageShaderResourceView, XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT2(0.0f, 0.0f));
-    blackHole->Initialize(_dev, _devcon, _cb_vs_vertexshader, _cb_ps_pixelshader);
-    _particles.push_back(blackHole);
-
-    for (int i = 0; i < 4500; i++)
-    {
-        float x(0), y(0);
-        float r = 30.0f * 1 / (1 + (pow(e, -((double)rand() / RAND_MAX))));
-        float theta = ((double)rand() / RAND_MAX) * 2 * PI;
-        x = 0.0f + r * cos(theta);
-        y = 0.0f + r * sin(theta);
-
-        Entity* newParticle = new Entity();
-        newParticle->Create(0.5f, 10e5, _imageShaderResourceView, XMFLOAT3(x, y, 0.0f), XMFLOAT2(y * 0.015, -x * 0.015));
-        newParticle->Initialize(_dev, _devcon, _cb_vs_vertexshader, _cb_ps_pixelshader);
-        _particles.push_back(newParticle);
-    }
+    return _camera;
 }
 
 void Graphics::RenderFrame(void) 
 {
     // Clear the back buffer to a color
-    _devcon->ClearRenderTargetView(_backbuffer, D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f));
+    static float _bgCcolor[3] = { 0.02,0.02,0.032 };
+    _devcon->ClearRenderTargetView(_backbuffer, D3DXCOLOR(_bgCcolor[0], _bgCcolor[1], _bgCcolor[2], 1.0f));
 
     // Refresh depth stencil view
     _devcon->ClearDepthStencilView(_depthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);
@@ -369,29 +356,44 @@ void Graphics::RenderFrame(void)
     _devcon->PSSetShader(_pPS, nullptr, 0);
 
     // Camera
-    static XMFLOAT3 cameraPos = {0.0f,0.0f,-100.0f};
-    _camera.SetPosition(cameraPos);
+    if (!_cameraTracking)
+        _camera.SetPosition(_cameraPos);
 
-    // Build BH QuadTree
-    static XMFLOAT2 center = _root->GetCenterOfMass();
-    _root->Reset(XMFLOAT2(center.x - 400.0f, center.y + 400.0f), XMFLOAT2(center.x + 400.0f, center.y - 400.0f));
+    static float ps_mods_color[3] = { 1.000000, 0.718000, 0.781000 };
 
-    // Insert Entities in the data structure
-    for (Entity* p : _particles)
+    // If there is at least a particle in the quadtree
+    if (_particles.size())
     {
-        _root->Insert(p, 0);
-    }
+        // Reset and calculate new min/max (bounding box)
+        XMFLOAT2 center = _qtRoot->GetCenterOfMass();
+        _qtRoot->Reset(XMFLOAT2(center.x - _qtRoot->s_range, center.y + _qtRoot->s_range), XMFLOAT2(center.x + _qtRoot->s_range, center.y - _qtRoot->s_range));
 
-    // Draw Particles
-    int nParticles = _particles.size();
-    for (int i = 0; i < nParticles; i++)
-    {
-        _particles[i]->Draw(_camera.GetViewMatrix() * _camera.GetProjectionMatrix());
-    }
-    
+        // Insert particles in the quadtree
+        for (Entity* p : _particles)
+        {
+            _qtRoot->Insert(p, 0);
+        }
+
+        // Compute mass
+        _qtRoot->ComputeMassDistribution();
+
+        // Draw particles
+        //_qtRoot->DrawEntities(_camera.GetViewMatrix() * _camera.GetProjectionMatrix());
+
+        for (Entity* p : _particles)
+        {
+            p->SetColorModifiers(ps_mods_color[0], ps_mods_color[1], ps_mods_color[2]);
+            p->Draw(_camera.GetViewMatrix() * _camera.GetProjectionMatrix());
+        }
+
+        if (_cameraTracking)
+        {
+            _camera.Track(center.x, center.y, _cameraPos.z);
+            _cameraPos = _camera.GetPositionFloat3();
+        }            
+    }   
+
     // Text / FPS
-    static int fpsCount = 0;
-    static std::string fpsString = "FPS: 0";
     fpsCount += 1;
     if (_fpsTimer.GetMillisecondElapsed() > 1000.0f)
     {
@@ -403,74 +405,121 @@ void Graphics::RenderFrame(void)
     // Start ImGui
     _imgui->BeginRender();
     {
-        ImGui::Begin("Camera");
+        ImGui::Begin("Physics Engine", nullptr, ImGuiWindowFlags_MenuBar);
+        if (ImGui::BeginMenuBar())
         {
-            static float* camv[3] = { &cameraPos.x, &cameraPos.y, &cameraPos.z };
-            ImGui::DragFloat3("Position (x, y, z)", *camv, 0.1f);
-            if (ImGui::Button("RESET POSITION", { 110.0f,20.0f }))
+            // File menu
+            if (ImGui::BeginMenu("File"))
             {
-                cameraPos = XMFLOAT3(0.0f, 0.0f, -200.0f);
-            }
-        } ImGui::End();
-
-        ImGui::Begin("Simulation");
-        {
-            if (ImGui::BeginTabBar("tabs"))
-            {
-                if (ImGui::BeginTabItem("Simulation"))
+                if (ImGui::MenuItem("Save Settings", "Ctrl+S"))
                 {
-                    ImGui::Checkbox("Edit", &_editing);
-
-                    ImGui::Spacing();
-
-                    std::string N = "Number of bodies (outside tree): " + std::to_string(_root->GetNum()) + "(" + std::to_string(_root->GetNumRenegades()) + ")";
-                    ImGui::Text(N.c_str());
-
-                    ImGui::Spacing();
-
-                    std::string theta = "Theta: " + std::to_string(_root->GetTheta());
-                    ImGui::Text(theta.c_str());
-
-                    ImGui::EndTabItem();
+                    _INIFile->write(_INIData); // save to config.ini
                 }
 
-                /*if (ImGui::BeginTabItem("Entities"))
-                {
-                    for (int i = 0; i < _particles.size(); i++)
-                    {
-                        XMFLOAT3 particlePos = _particles[i]->GetPositionFloat3();
-                        std::string label = "Entity " + std::to_string(i) + " -> x: " + std::to_string(particlePos.x) + " y: " + std::to_string(particlePos.y);
-                        ImGui::Text(label.c_str());
-                        ImGui::Spacing();
-                    }
-
-                    ImGui::EndTabItem();
-                } */
-
-                ImGui::EndTabBar();
+                ImGui::EndMenu();
             }
 
-        } ImGui::End();
+            // Level menu
+            if (ImGui::BeginMenu("Level"))
+            {
+                if (ImGui::MenuItem("Clear level", "Ctrl+R")) 
+                { 
+                    for (Entity* p : _particles)
+                        p->Release();
+                    if (_particles.size()) _particles.clear();
+                }
+
+                ImGui::EndMenu();
+            }
+
+            // Pause engine update
+            ImGui::SetCursorPosX(ImGui::GetContentRegionAvail().x - 60);
+            ImGui::Checkbox("Pause", &_editing);
+
+            ImGui::Spacing();
+
+            // Fps string
+            ImGui::Text(fpsString.c_str());
+
+            ImGui::EndMenuBar();
+        }  
+
+        // Scene configuration
+        if (ImGui::CollapsingHeader("Scene", ImGuiTreeNodeFlags_FramePadding))
+        {
+            if (ImGui::BeginChild("scene conf", ImVec2(0, 150), true))
+            {
+                // Background color
+                ImGui::ColorEdit3("Background", _bgCcolor);
+                _INIData["Window"]["Backgroud"] = std::to_string(_bgCcolor[0]) + ", " + std::to_string(_bgCcolor[1]) + ", " + std::to_string(_bgCcolor[2]);
+
+                // pixel shader modifiers
+                ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 10);
+                ImGui::SliderFloat3("ParticleColorMod", ps_mods_color, -1.0f, 2.0f);
+                _INIData["pixel shader"]["Color Mod"] = std::to_string(ps_mods_color[0]) + ", " + std::to_string(ps_mods_color[1]) + ", " + std::to_string(ps_mods_color[2]);
+            }
+            ImGui::EndChild();
+        }
+
+        // Camera transforms
+        if (ImGui::CollapsingHeader("Camera", ImGuiTreeNodeFlags_FramePadding))
+        {
+            if (ImGui::BeginChild("camera conf", ImVec2(0, 150), true))
+            {
+                ImGui::DragFloat("X", &_cameraPos.x, 0.1f);
+                ImGui::DragFloat("Y", &_cameraPos.y, 0.1f);
+                ImGui::DragFloat("Z", &_cameraPos.z, 0.1f);
+
+                ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 10);
+
+                if (ImGui::Button("Reset position"))
+                {
+                    _cameraPos = _camera.GetDefPosition();
+                }
+
+                ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 10);
+                
+                ImGui::Checkbox(" Camera tracking", &_cameraTracking);
+            }
+            ImGui::EndChild();
+        }
+
+        // Level configuration
+        if (ImGui::CollapsingHeader("Spawn", ImGuiTreeNodeFlags_FramePadding))
+        {
+            static int N(0);
+
+            ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPosX() + 10, ImGui::GetCursorPosY() + 10));
+            ImGui::TextWrapped("Simulation selection");
+            if (ImGui::BeginChild("Spawn", ImVec2(0, 250), true))
+            {
+                ImGui::InputInt("N (bodies)", &N, 1000); ImGui::Spacing();
+
+                ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 10);
+                if (ImGui::Button("Spawn"))
+                {
+                    this->SpiralGalaxy(N);
+                }
+            }
+            ImGui::EndChild();
+        }
+
+        ImGui::End();
     }
     _imgui->EndRender();
 
     // Font Render
     _spriteBatch->Begin();
     _spriteFont->DrawString(_spriteBatch.get(), fpsString.c_str(), DirectX::XMFLOAT2(0, 0), DirectX::Colors::White, 0.0f, DirectX::XMFLOAT2(0.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 1.0f));
+    _spriteFont->DrawString(_spriteBatch.get(), ("Theta: " + std::to_string(_qtRoot->GetTheta())).c_str(), DirectX::XMFLOAT2(0, 20), DirectX::Colors::White, 0.0f, DirectX::XMFLOAT2(0.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 1.0f));
+    _spriteFont->DrawString(_spriteBatch.get(), ("N: " + std::to_string(_qtRoot->GetNum())).c_str(), DirectX::XMFLOAT2(0, 40), DirectX::Colors::White, 0.0f, DirectX::XMFLOAT2(0.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 1.0f));
+    _spriteFont->DrawString(_spriteBatch.get(), ("Min (x, y): " + std::to_string((int)_qtRoot->GetMin().x) + ", " + std::to_string((int)_qtRoot->GetMin().y)).c_str(), DirectX::XMFLOAT2(0, 60), DirectX::Colors::White, 0.0f, DirectX::XMFLOAT2(0.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 1.0f));
+    _spriteFont->DrawString(_spriteBatch.get(), ("Max (x, y): " + std::to_string((int)_qtRoot->GetMax().x) + ", " + std::to_string((int)_qtRoot->GetMax().y)).c_str(), DirectX::XMFLOAT2(0, 80), DirectX::Colors::White, 0.0f, DirectX::XMFLOAT2(0.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 1.0f));
+    _spriteFont->DrawString(_spriteBatch.get(), ("Center of Mass (x, y): " + std::to_string(_qtRoot->GetCenterOfMass().x) + ", " + std::to_string(_qtRoot->GetCenterOfMass().y)).c_str(), DirectX::XMFLOAT2(0, 100), DirectX::Colors::White, 0.0f, DirectX::XMFLOAT2(0.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 1.0f));
     _spriteBatch->End();
 
     // Switch back buffer and front buffer
     _swapchain->Present(1, 0); // 1 for VSync
-}
-
-QuadTreeNode* Graphics::GetQuadTreeRoot() const
-{
-    return _root;
-}
-
-std::vector<Entity*> Graphics::GetParticles() const
-{
-    return _particles;
 }
 
 void Graphics::CleanD3D(void)
@@ -480,7 +529,10 @@ void Graphics::CleanD3D(void)
     _swapchain->SetFullscreenState(FALSE, NULL);  // switch to windowed mode
 
     // Close and release all existing COM objects
-    if (_root) _root->ReleaseEntities();
+    if (_particles.size())
+        for (int i = 0; i < _particles.size(); i++)
+            if (_particles[i]) _particles[i]->Release();
+
     if (_imageShaderResourceView) _imageShaderResourceView->Release();
     if (_spriteBatch) _spriteBatch.release();
     if (_spriteFont) _spriteFont.release();
@@ -499,4 +551,64 @@ void Graphics::CleanD3D(void)
     if (_backbuffer) _backbuffer->Release();
     if (_dev) _dev->Release();
     if (_devcon) _devcon->Release();
+}
+
+// Necessary velocity to escape M1 gravity
+XMFLOAT2 Graphics::GetOrbitalVelocity(const Entity* p1, const Entity* p2)
+{
+    double x1 = p1->GetPositionFloat3().x,
+           y1 = p1->GetPositionFloat3().y,
+           M1 = p1->GetMass();
+    double x2 = p2->GetPositionFloat3().x,
+           y2 = p2->GetPositionFloat3().y;
+
+    double xDistance = x1 - x2,
+           yDistance = y1 - y2;
+
+    double r = sqrt((xDistance * xDistance) + (yDistance * yDistance)); // distance between p1 and p2
+
+    double v = sqrt(_qtRoot->gamma_1 * M1 / r); // orbital velocity
+
+    double vx = (yDistance / r) * v,
+           vy = (-xDistance / r) * v; 
+
+    return XMFLOAT2(vx, vy);
+}
+
+void Graphics::SpiralGalaxy(int N)
+{
+    // TODO: check if spawned particles are colliding
+    
+    // Create random orbiting entities
+    srand(static_cast<unsigned>(time(0)));
+
+    // Create a black hole
+    Entity* blackHole = new Entity();
+    blackHole->Create(0.5f, 1e16, _imageShaderResourceView, XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT2(0.0f, 0.0f));
+    blackHole->Initialize(_dev, _devcon, _cb_vs_vertexshader, _cb_ps_pixelshader);
+    _particles.push_back(blackHole);
+
+    float spawn_range = 100.0f;
+    float particle_radius = 2.0f;
+    double particle_mass = 1.988435e11;
+    XMFLOAT2 position = { 0.0f,0.0f };
+    XMFLOAT2 velocity = { 0.0f,0.0f };
+
+    for (int i = 0; i < N; i++)
+    {
+        float x(0), y(0), r(0);
+        r = spawn_range * sqrt((double)rand() / RAND_MAX) + 20.0f;
+
+        float theta = ((double)rand() / RAND_MAX) * 2 * PI;
+        x = position.x + r * cos(theta);
+        y = position.y + r * sin(theta);
+
+        Entity* newParticle = new Entity();
+        newParticle->Create(particle_radius, particle_mass, _imageShaderResourceView, XMFLOAT3(x, y, 0.0f), XMFLOAT2(0.0f,0.0f));
+        newParticle->Initialize(_dev, _devcon, _cb_vs_vertexshader, _cb_ps_pixelshader);
+        _particles.push_back(newParticle);
+
+        velocity = GetOrbitalVelocity(blackHole, newParticle);
+        newParticle->SetVelocity(velocity);
+    }
 }

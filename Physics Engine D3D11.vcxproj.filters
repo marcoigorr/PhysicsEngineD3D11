@@ -155,6 +155,12 @@
     <ClCompile Include="QuadTree.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ModelNBody.h">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ModelNBody.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="vertexshader.hlsl">

@@ -10,7 +10,5 @@ public:
 	bool Initialize(HWND hWnd, ID3D11Device* dev, ID3D11DeviceContext* devcon);
 	void ShutDown();
 	void BeginRender();
-	void Render();
 	void EndRender();
-
 };
