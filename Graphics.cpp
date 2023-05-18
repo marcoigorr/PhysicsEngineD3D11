@@ -624,7 +624,7 @@ void Graphics::SpiralGalaxy(int N)
         y = galaxy_center.y + r * sin(theta);
 
         Entity* newParticle = new Entity();
-        newParticle->Create(particle_radius, particle_mass, _imageShaderResourceView, XMFLOAT3(x, y, 0.0f), XMFLOAT2(0.0f,0.0f));
+        newParticle->Create(particle_radius, particle_mass * ((double)rand() / RAND_MAX), _imageShaderResourceView, XMFLOAT3(x, y, 0.0f), XMFLOAT2(0.0f,0.0f));
         newParticle->Initialize(_dev, _devcon, _cb_vs_vertexshader, _cb_ps_pixelshader);
         _particles.push_back(newParticle);
 
