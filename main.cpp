@@ -11,7 +11,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
     
     Engine engine;
 
-    if (engine.Initialize(hInstance, "PhysicsEngine", "WindowClass1", 1600, 1000))
+    if (engine.Initialize(hInstance, "PhysicsEngine", "WindowClass1", 2560, 1380))
     {
         while (engine.ProcessMessages() == true)
         {

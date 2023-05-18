@@ -62,7 +62,11 @@ void Entity::Draw(const XMMATRIX& viewProjectionMatrix)
 	_devcon->VSSetConstantBuffers(0, 1, _cb_vs_vertexshader->GetAddressOf());
 
     double magnitude = sqrt((_velocity.x * _velocity.x) + (_velocity.y * _velocity.y)); // velocity vector module
-    _cb_ps_pixelshader->_data.v_magnitude = magnitude; // pass value to pixel shader
+    static double max = 0;
+    if (magnitude > max && magnitude < 2)
+        max = magnitude;
+
+    _cb_ps_pixelshader->_data.v_magnitude = magnitude / max; // pass normalized velocity value to pixel shader
 
     _cb_ps_pixelshader->_data.r_mod = _colorMod.r;
     _cb_ps_pixelshader->_data.g_mod = _colorMod.g;

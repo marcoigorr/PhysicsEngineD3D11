@@ -37,6 +37,7 @@ public:
 
 	XMFLOAT2 GetOrbitalVelocity(const Entity* p1, const Entity* p2);
 	void SpiralGalaxy(int N);
+	void GalaxyCollision(int N);
   
 private:
 	mINI::INIFile* _INIFile;
