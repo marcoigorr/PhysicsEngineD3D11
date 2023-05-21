@@ -199,8 +199,6 @@
     <ClCompile Include="ImGui\imgui_tables.cpp" />
     <ClCompile Include="ImGui\imgui_widgets.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="ModelNBody.cpp" />
-    <ClCompile Include="ModelNBody.h" />
     <ClCompile Include="QuadTree.cpp" />
     <ClCompile Include="RenderWindow.cpp" />
     <ClCompile Include="Timer.cpp" />

@@ -324,7 +324,7 @@ bool Graphics::InitGraphicsD3D11(void)
     _camera.SetProjectionValues(90.0f, static_cast<float>(_wWidth) / static_cast<float>(_wHeight), 0.1f, 1000.0f);
     _cameraPos = _camera.GetDefPosition();
 
-    float initialRange = 100.0f;
+    float initialRange = 600.0f;
     _qtRoot = new QuadTreeNode(XMFLOAT2(-initialRange, initialRange), XMFLOAT2(initialRange, -initialRange), nullptr);
     
     return true;
@@ -378,7 +378,7 @@ void Graphics::RenderFrame(void)
         _qtRoot->ComputeMassDistribution();
 
         // Draw particles
-        //_qtRoot->DrawEntities(_camera.GetViewMatrix() * _camera.GetProjectionMatrix());
+        // _qtRoot->DrawEntities(_camera.GetViewMatrix() * _camera.GetProjectionMatrix());
 
         for (Entity* p : _particles)
         {
@@ -433,7 +433,7 @@ void Graphics::RenderFrame(void)
             }
 
             // Pause engine update
-            ImGui::SetCursorPosX(ImGui::GetContentRegionAvail().x - 60);
+            ImGui::SetCursorPosX(ImGui::GetContentRegionAvail().x - 30);
             ImGui::Checkbox("Pause", &_editing);
 
             ImGui::Spacing();
@@ -453,7 +453,7 @@ void Graphics::RenderFrame(void)
                 ImGui::ColorEdit3("Background", _bgCcolor);
                 _INIData["Window"]["Backgroud"] = std::to_string(_bgCcolor[0]) + ", " + std::to_string(_bgCcolor[1]) + ", " + std::to_string(_bgCcolor[2]);
 
-                // pixel shader modifiers
+                // Pixel shader modifiers
                 ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 10);
                 ImGui::SliderFloat3("ParticleColorMod", ps_mods_color, -1.0f, 2.0f);
                 _INIData["pixel shader"]["Color Mod"] = std::to_string(ps_mods_color[0]) + ", " + std::to_string(ps_mods_color[1]) + ", " + std::to_string(ps_mods_color[2]);
@@ -486,19 +486,40 @@ void Graphics::RenderFrame(void)
 
         // Level configuration
         if (ImGui::CollapsingHeader("Spawn", ImGuiTreeNodeFlags_FramePadding))
-        {
+        {            
+            static const char* items[] = { "Spiral Galaxy", "Galaxy Collision"};
+            static int current_item = NULL;
+
             static int N(0);
 
             ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPosX() + 10, ImGui::GetCursorPosY() + 10));
             ImGui::TextWrapped("Simulation selection");
             if (ImGui::BeginChild("Spawn", ImVec2(0, 250), true))
             {
-                ImGui::InputInt("N (bodies)", &N, 1000); ImGui::Spacing();
-
                 ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 10);
+                if (ImGui::BeginCombo("##combo", items[current_item])) 
+                {
+                    for (int n = 0; n < IM_ARRAYSIZE(items); n++)
+                    {
+                        bool is_selected = (current_item == n); 
+                        if (ImGui::Selectable(items[n], is_selected))
+                            current_item = n;
+                        if (is_selected)
+                            ImGui::SetItemDefaultFocus();
+                    }
+
+                    ImGui::EndCombo();
+                }
+
+                ImGui::InputInt("N (bodies)", &N, 1000);
+
                 if (ImGui::Button("Spawn"))
                 {
-                    this->SpiralGalaxy(N);
+                    if (current_item == 0)
+                        this->SpiralGalaxy(N);
+
+                    else if (current_item == 1)
+                        this->GalaxyCollision(N);
                 }
             }
             ImGui::EndChild();
@@ -510,12 +531,14 @@ void Graphics::RenderFrame(void)
 
     // Font Render
     _spriteBatch->Begin();
-    _spriteFont->DrawString(_spriteBatch.get(), fpsString.c_str(), DirectX::XMFLOAT2(0, 0), DirectX::Colors::White, 0.0f, DirectX::XMFLOAT2(0.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 1.0f));
-    _spriteFont->DrawString(_spriteBatch.get(), ("Theta: " + std::to_string(_qtRoot->GetTheta())).c_str(), DirectX::XMFLOAT2(0, 20), DirectX::Colors::White, 0.0f, DirectX::XMFLOAT2(0.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 1.0f));
-    _spriteFont->DrawString(_spriteBatch.get(), ("N: " + std::to_string(_qtRoot->GetNum())).c_str(), DirectX::XMFLOAT2(0, 40), DirectX::Colors::White, 0.0f, DirectX::XMFLOAT2(0.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 1.0f));
-    _spriteFont->DrawString(_spriteBatch.get(), ("Min (x, y): " + std::to_string((int)_qtRoot->GetMin().x) + ", " + std::to_string((int)_qtRoot->GetMin().y)).c_str(), DirectX::XMFLOAT2(0, 60), DirectX::Colors::White, 0.0f, DirectX::XMFLOAT2(0.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 1.0f));
-    _spriteFont->DrawString(_spriteBatch.get(), ("Max (x, y): " + std::to_string((int)_qtRoot->GetMax().x) + ", " + std::to_string((int)_qtRoot->GetMax().y)).c_str(), DirectX::XMFLOAT2(0, 80), DirectX::Colors::White, 0.0f, DirectX::XMFLOAT2(0.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 1.0f));
-    _spriteFont->DrawString(_spriteBatch.get(), ("Center of Mass (x, y): " + std::to_string(_qtRoot->GetCenterOfMass().x) + ", " + std::to_string(_qtRoot->GetCenterOfMass().y)).c_str(), DirectX::XMFLOAT2(0, 100), DirectX::Colors::White, 0.0f, DirectX::XMFLOAT2(0.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 1.0f));
+    {
+        _spriteFont->DrawString(_spriteBatch.get(), fpsString.c_str(), DirectX::XMFLOAT2(0, 0), DirectX::Colors::White, 0.0f, DirectX::XMFLOAT2(0.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 1.0f));
+        _spriteFont->DrawString(_spriteBatch.get(), ("Theta: " + std::to_string(_qtRoot->GetTheta())).c_str(), DirectX::XMFLOAT2(0, 20), DirectX::Colors::White, 0.0f, DirectX::XMFLOAT2(0.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 1.0f));
+        _spriteFont->DrawString(_spriteBatch.get(), ("N: " + std::to_string(_qtRoot->GetNum())).c_str(), DirectX::XMFLOAT2(0, 40), DirectX::Colors::White, 0.0f, DirectX::XMFLOAT2(0.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 1.0f));
+        _spriteFont->DrawString(_spriteBatch.get(), ("Min (x, y): " + std::to_string((int)_qtRoot->GetMin().x) + ", " + std::to_string((int)_qtRoot->GetMin().y)).c_str(), DirectX::XMFLOAT2(0, 60), DirectX::Colors::White, 0.0f, DirectX::XMFLOAT2(0.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 1.0f));
+        _spriteFont->DrawString(_spriteBatch.get(), ("Max (x, y): " + std::to_string((int)_qtRoot->GetMax().x) + ", " + std::to_string((int)_qtRoot->GetMax().y)).c_str(), DirectX::XMFLOAT2(0, 80), DirectX::Colors::White, 0.0f, DirectX::XMFLOAT2(0.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 1.0f));
+        _spriteFont->DrawString(_spriteBatch.get(), ("Center of Mass (x, y): " + std::to_string(_qtRoot->GetCenterOfMass().x) + ", " + std::to_string(_qtRoot->GetCenterOfMass().y)).c_str(), DirectX::XMFLOAT2(0, 100), DirectX::Colors::White, 0.0f, DirectX::XMFLOAT2(0.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 1.0f));
+    }
     _spriteBatch->End();
 
     // Switch back buffer and front buffer
@@ -576,23 +599,20 @@ XMFLOAT2 Graphics::GetOrbitalVelocity(const Entity* p1, const Entity* p2)
 }
 
 void Graphics::SpiralGalaxy(int N)
-{
-    // TODO: check if spawned particles are colliding
-    
-    // Create random orbiting entities
+{   
     srand(static_cast<unsigned>(time(0)));
-
-    // Create a black hole
-    Entity* blackHole = new Entity();
-    blackHole->Create(0.5f, 1e16, _imageShaderResourceView, XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT2(0.0f, 0.0f));
-    blackHole->Initialize(_dev, _devcon, _cb_vs_vertexshader, _cb_ps_pixelshader);
-    _particles.push_back(blackHole);
 
     float spawn_range = 100.0f;
     float particle_radius = 2.0f;
-    double particle_mass = 1.988435e11;
-    XMFLOAT2 position = { 0.0f,0.0f };
+    double particle_mass = 1.9722e11;
+    XMFLOAT2 galaxy_center = { 50.0f,50.0f };
     XMFLOAT2 velocity = { 0.0f,0.0f };
+
+    // Create a black hole
+    Entity* blackHole = new Entity();
+    blackHole->Create(0.5f, 1.988435e16, _imageShaderResourceView, XMFLOAT3(galaxy_center.x, galaxy_center.y, 0.0f), XMFLOAT2(0.0f, 0.0f));
+    blackHole->Initialize(_dev, _devcon, _cb_vs_vertexshader, _cb_ps_pixelshader);
+    _particles.push_back(blackHole);
 
     for (int i = 0; i < N; i++)
     {
@@ -600,15 +620,80 @@ void Graphics::SpiralGalaxy(int N)
         r = spawn_range * sqrt((double)rand() / RAND_MAX) + 20.0f;
 
         float theta = ((double)rand() / RAND_MAX) * 2 * PI;
-        x = position.x + r * cos(theta);
-        y = position.y + r * sin(theta);
+        x = galaxy_center.x + r * cos(theta);
+        y = galaxy_center.y + r * sin(theta);
 
         Entity* newParticle = new Entity();
-        newParticle->Create(particle_radius, particle_mass, _imageShaderResourceView, XMFLOAT3(x, y, 0.0f), XMFLOAT2(0.0f,0.0f));
+        newParticle->Create(particle_radius, particle_mass * ((double)rand() / RAND_MAX), _imageShaderResourceView, XMFLOAT3(x, y, 0.0f), XMFLOAT2(0.0f,0.0f));
         newParticle->Initialize(_dev, _devcon, _cb_vs_vertexshader, _cb_ps_pixelshader);
         _particles.push_back(newParticle);
 
         velocity = GetOrbitalVelocity(blackHole, newParticle);
         newParticle->SetVelocity(velocity);
+    }
+}
+
+void Graphics::GalaxyCollision(int N)
+{
+    srand(static_cast<unsigned>(time(0)));
+
+    int N2 = N * 0.2;
+    int N1 = N - N2;
+
+    float spawn_range = 100.0f;
+    float particle_radius = 2.0f;
+    double particle_mass = 5.9722e11;
+    XMFLOAT2 galaxy_center = { 0.0f,0.0f };
+    XMFLOAT2 velocity = { 0.0f,0.0f };
+
+    // Galaxy 1 black hole
+    Entity* blackHole1 = new Entity();
+    blackHole1->Create(0.5f, 3.988435e16, _imageShaderResourceView, XMFLOAT3(galaxy_center.x, galaxy_center.y, 0.0f), XMFLOAT2(0.0f, 0.0f));
+    blackHole1->Initialize(_dev, _devcon, _cb_vs_vertexshader, _cb_ps_pixelshader);
+    _particles.push_back(blackHole1);
+
+    for (int i = 0; i < N1; i++)
+    {
+        float x(0), y(0), r(0);
+        r = spawn_range * sqrt((double)rand() / RAND_MAX) + 20.0f;
+
+        float theta = ((double)rand() / RAND_MAX) * 2 * PI;
+        x = galaxy_center.x + r * cos(theta);
+        y = galaxy_center.y + r * sin(theta);
+
+        Entity* newParticle = new Entity();
+        newParticle->Create(particle_radius, particle_mass * ((double)rand() / RAND_MAX), _imageShaderResourceView, XMFLOAT3(x, y, 0.0f), XMFLOAT2(0.0f, 0.0f));
+        newParticle->Initialize(_dev, _devcon, _cb_vs_vertexshader, _cb_ps_pixelshader);
+        _particles.push_back(newParticle);
+        velocity = GetOrbitalVelocity(blackHole1, newParticle);
+        newParticle->SetVelocity(velocity);
+    }
+
+    spawn_range = 70.0f;
+    galaxy_center = { 200.0f,200.0f };
+
+    // Galaxy 2 black hole
+    Entity* blackHole2 = new Entity();
+    blackHole2->Create(0.5f, 1.988435e16, _imageShaderResourceView, XMFLOAT3(galaxy_center.x, galaxy_center.y, 0.0f), XMFLOAT2(0.0f, 0.0f));
+    blackHole2->Initialize(_dev, _devcon, _cb_vs_vertexshader, _cb_ps_pixelshader);
+    _particles.push_back(blackHole2);
+    velocity = GetOrbitalVelocity(blackHole1, blackHole2);
+    blackHole2->SetVelocity(velocity.x * 0.7, velocity.y * 0.7);
+
+    for (int j = 0; j < N2; ++j)
+    {
+        float x(0), y(0), r(0);
+        r = spawn_range * sqrt((double)rand() / RAND_MAX) + 10.0f;
+
+        float theta = ((double)rand() / RAND_MAX) * 2 * PI;
+        x = galaxy_center.x + r * cos(theta);
+        y = galaxy_center.y + r * sin(theta);
+
+        Entity* newParticle = new Entity();
+        newParticle->Create(particle_radius, particle_mass, _imageShaderResourceView, XMFLOAT3(x, y, 0.0f), XMFLOAT2(0.0f, 0.0f));
+        newParticle->Initialize(_dev, _devcon, _cb_vs_vertexshader, _cb_ps_pixelshader);
+        _particles.push_back(newParticle);
+        velocity = GetOrbitalVelocity(blackHole2, newParticle);
+        newParticle->SetVelocity(velocity.x += blackHole2->GetVelocityFloat2().x, velocity.y += blackHole2->GetVelocityFloat2().y);
     }
 }
