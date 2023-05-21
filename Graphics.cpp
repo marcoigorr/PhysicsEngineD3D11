@@ -378,7 +378,7 @@ void Graphics::RenderFrame(void)
         _qtRoot->ComputeMassDistribution();
 
         // Draw particles
-        //_qtRoot->DrawEntities(_camera.GetViewMatrix() * _camera.GetProjectionMatrix());
+        // _qtRoot->DrawEntities(_camera.GetViewMatrix() * _camera.GetProjectionMatrix());
 
         for (Entity* p : _particles)
         {
@@ -433,7 +433,7 @@ void Graphics::RenderFrame(void)
             }
 
             // Pause engine update
-            ImGui::SetCursorPosX(ImGui::GetContentRegionAvail().x - 60);
+            ImGui::SetCursorPosX(ImGui::GetContentRegionAvail().x - 30);
             ImGui::Checkbox("Pause", &_editing);
 
             ImGui::Spacing();
@@ -453,7 +453,7 @@ void Graphics::RenderFrame(void)
                 ImGui::ColorEdit3("Background", _bgCcolor);
                 _INIData["Window"]["Backgroud"] = std::to_string(_bgCcolor[0]) + ", " + std::to_string(_bgCcolor[1]) + ", " + std::to_string(_bgCcolor[2]);
 
-                // pixel shader modifiers
+                // Pixel shader modifiers
                 ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 10);
                 ImGui::SliderFloat3("ParticleColorMod", ps_mods_color, -1.0f, 2.0f);
                 _INIData["pixel shader"]["Color Mod"] = std::to_string(ps_mods_color[0]) + ", " + std::to_string(ps_mods_color[1]) + ", " + std::to_string(ps_mods_color[2]);
@@ -604,13 +604,13 @@ void Graphics::SpiralGalaxy(int N)
 
     float spawn_range = 100.0f;
     float particle_radius = 2.0f;
-    double particle_mass = 1.988435e11;
+    double particle_mass = 1.9722e11;
     XMFLOAT2 galaxy_center = { 50.0f,50.0f };
     XMFLOAT2 velocity = { 0.0f,0.0f };
 
     // Create a black hole
     Entity* blackHole = new Entity();
-    blackHole->Create(0.5f, 2e16, _imageShaderResourceView, XMFLOAT3(galaxy_center.x, galaxy_center.y, 0.0f), XMFLOAT2(0.0f, 0.0f));
+    blackHole->Create(0.5f, 1.988435e16, _imageShaderResourceView, XMFLOAT3(galaxy_center.x, galaxy_center.y, 0.0f), XMFLOAT2(0.0f, 0.0f));
     blackHole->Initialize(_dev, _devcon, _cb_vs_vertexshader, _cb_ps_pixelshader);
     _particles.push_back(blackHole);
 
@@ -642,13 +642,13 @@ void Graphics::GalaxyCollision(int N)
 
     float spawn_range = 100.0f;
     float particle_radius = 2.0f;
-    double particle_mass = 1.988435e11;
+    double particle_mass = 5.9722e11;
     XMFLOAT2 galaxy_center = { 0.0f,0.0f };
     XMFLOAT2 velocity = { 0.0f,0.0f };
 
     // Galaxy 1 black hole
     Entity* blackHole1 = new Entity();
-    blackHole1->Create(0.5f, 13e15, _imageShaderResourceView, XMFLOAT3(galaxy_center.x, galaxy_center.y, 0.0f), XMFLOAT2(0.0f, 0.0f));
+    blackHole1->Create(0.5f, 3.988435e16, _imageShaderResourceView, XMFLOAT3(galaxy_center.x, galaxy_center.y, 0.0f), XMFLOAT2(0.0f, 0.0f));
     blackHole1->Initialize(_dev, _devcon, _cb_vs_vertexshader, _cb_ps_pixelshader);
     _particles.push_back(blackHole1);
 
@@ -674,11 +674,11 @@ void Graphics::GalaxyCollision(int N)
 
     // Galaxy 2 black hole
     Entity* blackHole2 = new Entity();
-    blackHole2->Create(0.5f, 13e15, _imageShaderResourceView, XMFLOAT3(galaxy_center.x, galaxy_center.y, 0.0f), XMFLOAT2(0.0f, 0.0f));
+    blackHole2->Create(0.5f, 1.988435e16, _imageShaderResourceView, XMFLOAT3(galaxy_center.x, galaxy_center.y, 0.0f), XMFLOAT2(0.0f, 0.0f));
     blackHole2->Initialize(_dev, _devcon, _cb_vs_vertexshader, _cb_ps_pixelshader);
     _particles.push_back(blackHole2);
     velocity = GetOrbitalVelocity(blackHole1, blackHole2);
-    blackHole2->SetVelocity(velocity.x, velocity.y);
+    blackHole2->SetVelocity(velocity.x * 0.7, velocity.y * 0.7);
 
     for (int j = 0; j < N2; ++j)
     {

@@ -11,6 +11,7 @@ public:
 	bool CreateWnd(HINSTANCE hInstance, std::string sTitle, std::string sClass, int width, int height);
 	void RegisterWindowClass(void);
 	bool ProcessMessages();
+	void GetDesktopResolution(int& horizontal, int& vertical);
 
 	HWND GetHWND() const;
 

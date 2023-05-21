@@ -11,7 +11,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
     {
     case WM_NCCREATE:
     {
-        OutputDebugStringA("[+] The window was created! ");
+        OutputDebugStringA("[+] The window was created!");
         return DefWindowProc(hWnd, message, wParam, lParam);
     }
     default:
@@ -31,22 +31,24 @@ bool RenderWindow::CreateWnd(HINSTANCE hInstance, std::string title, std::string
 
     this->RegisterWindowClass();
       
-    int centerScreenX = GetSystemMetrics(SM_CXSCREEN) / 2 - width / 2;
-    int centerScreenY = GetSystemMetrics(SM_CYSCREEN) / 2 - height / 2;
+    // this->GetDesktopResolution(_width, _height);
+
+    int centerScreenX = GetSystemMetrics(SM_CXSCREEN) / 2 - _width / 2;
+    int centerScreenY = GetSystemMetrics(SM_CYSCREEN) / 2 - _height / 2;
 
     // Using AdjustWindowRect to set an accurate size of the drawing area
     RECT wr;
     wr.left = centerScreenX;
     wr.top = centerScreenY;
-    wr.right = wr.left + width;
-    wr.bottom = wr.top + height;
-    AdjustWindowRect(&wr, WS_CAPTION | WS_MINIMIZEBOX | WS_SYSMENU, FALSE);
+    wr.right = wr.left + _width;
+    wr.bottom = wr.top + _height;
+    AdjustWindowRect(&wr, WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX, FALSE);
 
     // Create the window and use the result as the handle
     _hWnd = CreateWindowEx(NULL,
         _wWindowClass.c_str(),
         _wWindowTitle.c_str(),
-        WS_CAPTION | WS_MINIMIZEBOX | WS_SYSMENU,  // window flags
+        WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX,  // window flags
         wr.left,  // the starting x position
         wr.top,  // the starting y positions
         wr.right - wr.left,  // width of window
@@ -129,4 +131,14 @@ bool RenderWindow::ProcessMessages()
 HWND RenderWindow::GetHWND() const
 {
     return _hWnd;
+}
+
+void RenderWindow::GetDesktopResolution(int& horizontal, int& vertical)
+{
+    RECT desktop;
+
+    const HWND hDesktop = GetDesktopWindow();
+    GetWindowRect(hDesktop, &desktop);
+    horizontal = desktop.right;
+    vertical = desktop.bottom;
 }
