@@ -10,6 +10,7 @@
 #pragma comment (lib, "DirectXTK.lib")
 #pragma comment (lib, "DXGI.lib")
 #pragma comment (lib, "D3DCompiler.lib")
+#include "Shader.h"
 #include "ConstantBuffer.h"
 #include "ConstantBufferTypes.h"
 #include <SpriteBatch.h>
@@ -50,9 +51,8 @@ private:
 	ID3D11Device* _dev;							// pointer to Direct3D device interface
 	ID3D11DeviceContext* _devcon;				// pointer to Direct3D device context
 	ID3D11RenderTargetView* _backbuffer;		// pointer to back buffer
-	ID3D11VertexShader* _pVS;					// vertex shader (run once for each vertex rendered)
-	ID3D11PixelShader* _pPS;					// pixel shader (run for each pixel drawn)s
-	ID3D11InputLayout* _pLayout;				// input layout
+	VertexShader _pVS;							// vertex shader (run once for each vertex rendered)
+	PixelShader _pPS;							// pixel shader (run for each pixel drawn)
 	ID3D11RasterizerState* _rasterizerState;
 	 
 	ID3D11Texture2D* _depthStencilBuffer;
@@ -81,7 +81,8 @@ private:
 	bool _cameraTracking = true;
 
 public:	
-	bool _editing = true;
+	bool _pause = true;
+	bool _enableColors = true;
 
 	QuadTreeNode* _qtRoot;
 	std::vector<Entity*> _particles;

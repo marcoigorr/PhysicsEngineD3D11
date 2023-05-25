@@ -244,52 +244,35 @@ bool Graphics::InitD3D11(HWND hWnd)
 
 bool Graphics::InitPipeline(void)
 {
-    // Load and compile the two shaders
-    ID3D10Blob* VS, * PS;  // buffer with compiled code of the shader (COM obj)
+    std::wstring shaderfolder = L"";    
+
+#pragma region DetermineShaderPath
     
-    HRESULT hr;
-    hr = D3DX11CompileFromFile(L"vertexshader.hlsl", 0, 0, "main", "vs_5_0", 0, 0, 0, &VS, 0, 0);
-    if (FAILED(hr))
+    if (IsDebuggerPresent())
     {
-        ErrorLogger::Log(hr, "Failed to compile vertex shader.");
-        return false;
+#ifdef _DEBUG // Debug Mode
+        shaderfolder = L".\\x64\\Debug\\";
+#else // Release Mode
+        shaderfolder = L".\\x64\\Release\\";
+#endif
     }
 
-    hr = D3DX11CompileFromFile(L"pixelshader.hlsl", 0, 0, "main", "ps_5_0", 0, 0, 0, &PS, 0, 0);
-    if (FAILED(hr))
-    {
-        ErrorLogger::Log(hr, "Failed to compile pixel shader.");
-        return false;
-    }
-
-    // Encapsulate shaders into shader objects
-    hr = _dev->CreateVertexShader(VS->GetBufferPointer(), VS->GetBufferSize(), NULL, &_pVS);
-    if (FAILED(hr))
-    {
-        ErrorLogger::Log(hr, "Failed to create vertex shader.");
-        return false;
-    }
-    
-    hr = _dev->CreatePixelShader(PS->GetBufferPointer(), PS->GetBufferSize(), NULL, &_pPS);
-    if (FAILED(hr))
-    {
-        ErrorLogger::Log(hr, "Failed to create pixel shader.");
-        return false;
-    }   
-
-    // Creating input layout to let gpu organize data properly
+    // Input layout to let gpu organize data properly
     D3D11_INPUT_ELEMENT_DESC ied[] =
     {
         {"POSITION", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0  },
-		{"TEXCOORD", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0  },
+        {"TEXCOORD", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0  },
     };
 
-    hr = _dev->CreateInputLayout(ied, ARRAYSIZE(ied), VS->GetBufferPointer(), VS->GetBufferSize(), &_pLayout);
-    if (FAILED(hr))
-    {
-        ErrorLogger::Log(hr, "Failed to create Input layout.");
+    UINT numElements = ARRAYSIZE(ied);
+
+    // Vertex Shader    
+    if (!_pVS.Initialize(_dev, shaderfolder + L"vertexshader.cso", ied, numElements))
         return false;
-    }
+    
+    // Pixel Shader
+    if (!_pPS.Initialize(_dev, shaderfolder + L"pixelshader.cso"))
+        return false;       
 
     return true;
 }
@@ -326,7 +309,7 @@ bool Graphics::InitGraphicsD3D11(void)
 
     float initialRange = 600.0f;
     _qtRoot = new QuadTreeNode(XMFLOAT2(-initialRange, initialRange), XMFLOAT2(initialRange, -initialRange), nullptr);
-    
+
     return true;
 }
 
@@ -347,13 +330,13 @@ void Graphics::RenderFrame(void)
     constexpr float blendFactor[] = { 0, 0, 0, 0 };
     _devcon->OMSetBlendState(_blendState, blendFactor, 0xffffffff);
 
-    _devcon->IASetInputLayout(_pLayout);
+    _devcon->IASetInputLayout(_pVS.GetInputLayout());
     _devcon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     _devcon->RSSetState(_rasterizerState);
     _devcon->OMSetDepthStencilState(_depthStencilState, 1);
     _devcon->PSSetSamplers(0, 1, &_samplerState);
-    _devcon->VSSetShader(_pVS, nullptr, 0);
-    _devcon->PSSetShader(_pPS, nullptr, 0);
+    _devcon->VSSetShader(_pVS.GetShader(), nullptr, 0);
+    _devcon->PSSetShader(_pPS.GetShader(), nullptr, 0);
 
     // Camera
     if (!_cameraTracking)
@@ -382,7 +365,9 @@ void Graphics::RenderFrame(void)
 
         for (Entity* p : _particles)
         {
-            p->SetColorModifiers(ps_mods_color[0], ps_mods_color[1], ps_mods_color[2]);
+            if (_enableColors)
+                p->SetColorModifiers(ps_mods_color[0], ps_mods_color[1], ps_mods_color[2]);
+
             p->Draw(_camera.GetViewMatrix() * _camera.GetProjectionMatrix());
         }
 
@@ -427,6 +412,11 @@ void Graphics::RenderFrame(void)
                     for (Entity* p : _particles)
                         p->Release();
                     if (_particles.size()) _particles.clear();
+
+                    _pause = true;
+
+                    if (_qtRoot->GetNum())
+                        _qtRoot->Reset(XMFLOAT2(_qtRoot->s_range, _qtRoot->s_range), XMFLOAT2(_qtRoot->s_range, _qtRoot->s_range));
                 }
 
                 ImGui::EndMenu();
@@ -434,7 +424,7 @@ void Graphics::RenderFrame(void)
 
             // Pause engine update
             ImGui::SetCursorPosX(ImGui::GetContentRegionAvail().x - 30);
-            ImGui::Checkbox("Pause", &_editing);
+            ImGui::Checkbox("Pause", &_pause);
 
             ImGui::Spacing();
 
@@ -455,7 +445,27 @@ void Graphics::RenderFrame(void)
 
                 // Pixel shader modifiers
                 ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 10);
-                ImGui::SliderFloat3("ParticleColorMod", ps_mods_color, -1.0f, 2.0f);
+                if (!_enableColors)
+                {
+                    if (ImGui::Button("ENABLE PARTICLES COLOR"))
+                    {
+                        _enableColors = true;
+                        for (Entity* p : _particles)
+                            p->SetColorFeature(true);
+                    }
+                }
+                   
+                if (_enableColors)
+                {
+                    if (ImGui::Button("DISABLE PARTICLES COLOR"))
+                    {
+                        _enableColors = false;
+                        for (Entity* p : _particles)
+                            p->SetColorFeature(false);
+                    }
+
+                    ImGui::SliderFloat3("ParticleColorMod", ps_mods_color, -1.0f, 2.0f);
+                }
                 _INIData["pixel shader"]["Color Mod"] = std::to_string(ps_mods_color[0]) + ", " + std::to_string(ps_mods_color[1]) + ", " + std::to_string(ps_mods_color[2]);
             }
             ImGui::EndChild();
@@ -564,9 +574,8 @@ void Graphics::CleanD3D(void)
     if (_depthStencilBuffer) _depthStencilBuffer->Release();
     if (_blendState) _blendState->Release();
     if (_rasterizerState) _rasterizerState->Release();
-    if (_pLayout) _pLayout->Release();
-    if (_pVS) _pVS->Release();
-    if (_pPS) _pPS->Release();
+    if (&_pVS) _pVS.Release();
+    if (&_pPS) _pPS.Release();
     if (_samplerState) _samplerState->Release();
     if (_cb_ps_pixelshader.GetAddressOf()) _cb_ps_pixelshader.Release();
     if (_cb_vs_vertexshader.GetAddressOf()) _cb_vs_vertexshader.Release();    
