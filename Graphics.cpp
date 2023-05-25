@@ -245,7 +245,6 @@ bool Graphics::InitD3D11(HWND hWnd)
 bool Graphics::InitPipeline(void)
 {
     std::wstring shaderfolder = L"";    
-    std::wstring shaderpath = L"";
 
 #pragma region DetermineShaderPath
     
