@@ -1,9 +1,9 @@
 cbuffer particleBuffer : register(b0)
 {
-    double r_mod;
-    double g_mod;
-    double b_mod;
-    double v_magnitude;
+    float v_magnitude;
+    float r_mod;
+    float g_mod;
+    float b_mod;
 }
 
 struct PS_INPUT

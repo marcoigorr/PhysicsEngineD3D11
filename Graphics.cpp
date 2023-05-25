@@ -245,20 +245,18 @@ bool Graphics::InitD3D11(HWND hWnd)
 bool Graphics::InitPipeline(void)
 {
     // Load and compile the two shaders
+    std::wstring shaderpath = L".\\vertexshader.cso";
+
     ID3D10Blob* VS, * PS;  // buffer with compiled code of the shader (COM obj)
     
     HRESULT hr;
-    hr = D3DX11CompileFromFile(L"vertexshader.hlsl", 0, 0, "main", "vs_5_0", 0, 0, 0, &VS, 0, 0);
+    
+    hr = D3DReadFileToBlob(shaderpath.c_str(), &VS);
     if (FAILED(hr))
     {
-        ErrorLogger::Log(hr, "Failed to compile vertex shader.");
-        return false;
-    }
-
-    hr = D3DX11CompileFromFile(L"pixelshader.hlsl", 0, 0, "main", "ps_5_0", 0, 0, 0, &PS, 0, 0);
-    if (FAILED(hr))
-    {
-        ErrorLogger::Log(hr, "Failed to compile pixel shader.");
+        std::wstring errorMsg = L"Failed to load shader: ";
+        errorMsg += shaderpath;
+        ErrorLogger::Log(hr, errorMsg);
         return false;
     }
 
@@ -266,22 +264,17 @@ bool Graphics::InitPipeline(void)
     hr = _dev->CreateVertexShader(VS->GetBufferPointer(), VS->GetBufferSize(), NULL, &_pVS);
     if (FAILED(hr))
     {
-        ErrorLogger::Log(hr, "Failed to create vertex shader.");
+        std::wstring errorMsg = L"Failed to create vertex shader: ";
+        errorMsg += shaderpath;
+        ErrorLogger::Log(hr, errorMsg);
         return false;
     }
-    
-    hr = _dev->CreatePixelShader(PS->GetBufferPointer(), PS->GetBufferSize(), NULL, &_pPS);
-    if (FAILED(hr))
-    {
-        ErrorLogger::Log(hr, "Failed to create pixel shader.");
-        return false;
-    }   
 
     // Creating input layout to let gpu organize data properly
     D3D11_INPUT_ELEMENT_DESC ied[] =
     {
         {"POSITION", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0  },
-		{"TEXCOORD", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0  },
+        {"TEXCOORD", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0  },
     };
 
     hr = _dev->CreateInputLayout(ied, ARRAYSIZE(ied), VS->GetBufferPointer(), VS->GetBufferSize(), &_pLayout);
@@ -290,6 +283,27 @@ bool Graphics::InitPipeline(void)
         ErrorLogger::Log(hr, "Failed to create Input layout.");
         return false;
     }
+    
+    // Repeat for pixel shader
+    shaderpath = L".\\pixelshader.cso";
+
+    hr = D3DReadFileToBlob(shaderpath.c_str(), &PS);
+    if (FAILED(hr))
+    {
+        std::wstring errorMsg = L"Failed to load shader: ";
+        errorMsg += shaderpath;
+        ErrorLogger::Log(hr, errorMsg);
+        return false;
+    }
+
+    hr = _dev->CreatePixelShader(PS->GetBufferPointer(), PS->GetBufferSize(), NULL, &_pPS);
+    if (FAILED(hr))
+    {
+        std::wstring errorMsg = L"Failed to create pixel shader: ";
+        errorMsg += shaderpath;
+        ErrorLogger::Log(hr, errorMsg);
+        return false;
+    }   
 
     return true;
 }

@@ -51,7 +51,7 @@ private:
 	ID3D11DeviceContext* _devcon;				// pointer to Direct3D device context
 	ID3D11RenderTargetView* _backbuffer;		// pointer to back buffer
 	ID3D11VertexShader* _pVS;					// vertex shader (run once for each vertex rendered)
-	ID3D11PixelShader* _pPS;					// pixel shader (run for each pixel drawn)s
+	ID3D11PixelShader* _pPS;					// pixel shader (run for each pixel drawn)
 	ID3D11InputLayout* _pLayout;				// input layout
 	ID3D11RasterizerState* _rasterizerState;
 	 
