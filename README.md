@@ -16,7 +16,5 @@ Main features:
  - ImGui menu
  
  
- ## Preview
- 
- 
-![preview](https://github.com/marcoigorr/PhysicsEngineD3D11/assets/87567996/c9b09562-da32-4e16-aed1-21503a59d023)
+## Preview
+![Capture](https://github.com/marcoigorr/PhysicsEngineD3D11/assets/87567996/5bbbb284-71cc-4607-b0dd-103d3528fbbe)
