@@ -12,4 +12,5 @@ struct CB_PS_pixelshader
 	float r_mod;
 	float g_mod;
 	float b_mod;
+	bool enableColor;
 };

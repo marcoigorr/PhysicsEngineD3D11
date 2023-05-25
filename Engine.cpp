@@ -32,7 +32,7 @@ bool Engine::Update()
 	static std::vector<Entity*>& s_particles = _gfx._particles;
 	static QuadTreeNode* s_qtRoot = _gfx._qtRoot;
 
-	if (_gfx._editing)
+	if (_gfx._pause)
 	{
 		_timer.Restart();
 		return true;

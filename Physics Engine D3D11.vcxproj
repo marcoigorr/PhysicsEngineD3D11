@@ -185,6 +185,7 @@
     <ClInclude Include="ImGui\imstb_truetype.h" />
     <ClInclude Include="IndexBuffer.h" />
     <ClInclude Include="QuadTree.h" />
+    <ClInclude Include="Shader.h" />
     <ClInclude Include="StringConverter.cpp" />
     <ClInclude Include="StringConverter.h" />
     <ClInclude Include="Timer.h" />
@@ -209,6 +210,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="QuadTree.cpp" />
     <ClCompile Include="RenderWindow.cpp" />
+    <ClCompile Include="Shader.cpp" />
     <ClCompile Include="Timer.cpp" />
     <ClCompile Include="WindowContainer.cpp" />
   </ItemGroup>

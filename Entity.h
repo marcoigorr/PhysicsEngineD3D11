@@ -51,6 +51,7 @@ public:
 
 	EColor GetColorModifiers() const;
 	void SetColorModifiers(double red, double green, double blue);
+	void SetColorFeature(bool newStatus);
 
 private:
 	void UpdateWorldMatrix();
@@ -76,6 +77,7 @@ private:
 	float _mass;
 
 	EColor _colorMod;
+	bool _enableColors;
 
 	const XMVECTOR _DEFAULT_FORWARD_VECTOR =	XMVectorSet( 0.0f, 0.0f,  1.0f, 0.0f);
 	const XMVECTOR _DEFAULT_UP_VECTOR =			XMVectorSet( 0.0f, 1.0f,  0.0f, 0.0f);

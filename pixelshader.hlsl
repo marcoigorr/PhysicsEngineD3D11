@@ -4,6 +4,7 @@ cbuffer particleBuffer : register(b0)
     float r_mod;
     float g_mod;
     float b_mod;
+    bool enableColor;
 }
 
 struct PS_INPUT
@@ -20,9 +21,12 @@ float4 main(PS_INPUT input) : SV_TARGET
     float4 pixelColor = objTexture.Sample(objSamplerState, input.inTexCoord);
 
     // rgb
-    pixelColor[0] = v_magnitude * r_mod;
-    pixelColor[1] = 1 - (v_magnitude * g_mod);
-    pixelColor[2] = 1 - (v_magnitude * b_mod);
-    
+    if (enableColor)
+    {
+        pixelColor[0] = v_magnitude * r_mod;
+        pixelColor[1] = 1 - (v_magnitude * g_mod);
+        pixelColor[2] = 1 - (v_magnitude * b_mod);
+    }
+        
     return pixelColor;
 }
