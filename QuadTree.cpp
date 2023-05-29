@@ -146,9 +146,7 @@ void QuadTreeNode::Insert(Entity* newParticle, int level)
 	// Check if Entity is inside bounding box
 	const XMFLOAT3 pos = newParticle->GetPositionFloat3();
 	if ((pos.x < _min.x || pos.x > _max.x) || (pos.y > _min.y || pos.y < _max.y))
-	{
 		return;
-	}
 
 	if (_num > 1)
 	{
